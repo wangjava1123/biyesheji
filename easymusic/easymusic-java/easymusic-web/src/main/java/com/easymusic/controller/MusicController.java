@@ -3,6 +3,7 @@ package com.easymusic.controller;
 import com.easymusic.annotation.GlobalInterceptor;
 import com.easymusic.entity.dto.TokenUserInfoDTO;
 import com.easymusic.entity.enums.CommendTypeEnum;
+import com.easymusic.entity.enums.MusicPublishStatusEnum;
 import com.easymusic.entity.enums.MusicStatusEnum;
 import com.easymusic.entity.enums.PageSize;
 import com.easymusic.entity.po.MusicCreation;
@@ -10,6 +11,7 @@ import com.easymusic.entity.po.MusicInfo;
 import com.easymusic.entity.po.MusicInfoAction;
 import com.easymusic.entity.query.MusicInfoQuery;
 import com.easymusic.entity.vo.ResponseVO;
+import com.easymusic.exception.BusinessException;
 import com.easymusic.service.MusicCreationService;
 import com.easymusic.service.MusicInfoActionService;
 import com.easymusic.service.MusicInfoService;
@@ -38,6 +40,8 @@ public class MusicController extends ABaseController {
         MusicInfoQuery musicInfoQuery = new MusicInfoQuery();
         musicInfoQuery.setQueryUser(true);
         musicInfoQuery.setCommendType(CommendTypeEnum.COMMEND.getType());
+        musicInfoQuery.setPublishStatus(MusicPublishStatusEnum.PUBLISHED.getStatus());
+        musicInfoQuery.setMusicStatus(MusicStatusEnum.CREATED.getStatus());
         musicInfoQuery.setCurrentUserId(tokenUserInfoDTO == null ? null : tokenUserInfoDTO.getUserId());
         musicInfoQuery.setOrderBy("m.create_time desc");
         return getSuccessResponseVO(musicInfoService.findListByParam(musicInfoQuery));
@@ -49,6 +53,7 @@ public class MusicController extends ABaseController {
         musicInfoQuery.setQueryUser(true);
         musicInfoQuery.setCommendType(CommendTypeEnum.NOT_COMMEND.getType());
         musicInfoQuery.setMusicStatus(MusicStatusEnum.CREATED.getStatus());
+        musicInfoQuery.setPublishStatus(MusicPublishStatusEnum.PUBLISHED.getStatus());
         musicInfoQuery.setOrderBy("m.create_time desc");
         if (indexType != null) {
             musicInfoQuery.setPageSize(PageSize.SIZE12.getSize());
@@ -64,7 +69,14 @@ public class MusicController extends ABaseController {
     @RequestMapping("/musicDetail")
     public ResponseVO musicDetail(@NotEmpty String musicId) {
         MusicInfo musicInfo = musicInfoService.getMusicInfoByMusicId(musicId);
+        if (musicInfo == null) {
+            throw new BusinessException("作品不存在");
+        }
         TokenUserInfoDTO tokenUserInfoDTO = getTokenUserInfo(null);
+        boolean currentUserIsOwner = tokenUserInfoDTO != null && tokenUserInfoDTO.getUserId().equals(musicInfo.getUserId());
+        if (!MusicPublishStatusEnum.PUBLISHED.getStatus().equals(musicInfo.getPublishStatus()) && !currentUserIsOwner) {
+            throw new BusinessException("作品暂未发布");
+        }
         if (tokenUserInfoDTO != null) {
             MusicInfoAction action = musicInfoActionService.getMusicInfoActionByMusicIdAndUserId(musicId, tokenUserInfoDTO.getUserId());
             musicInfo.setDoGood(action != null);
@@ -82,6 +94,10 @@ public class MusicController extends ABaseController {
 
     @RequestMapping("/updatePlayCount")
     public ResponseVO updatePlayCount(@NotEmpty String musicId) {
+        MusicInfo musicInfo = musicInfoService.getMusicInfoByMusicId(musicId);
+        if (musicInfo == null || !MusicPublishStatusEnum.PUBLISHED.getStatus().equals(musicInfo.getPublishStatus())) {
+            throw new BusinessException("作品暂未发布");
+        }
         musicInfoService.updateMusicCount(musicId);
         return getSuccessResponseVO(null);
     }

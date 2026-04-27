@@ -1,6 +1,7 @@
 package com.easymusic.service.impl;
 
 import com.easymusic.entity.enums.MusicActionTypeEnum;
+import com.easymusic.entity.enums.MusicPublishStatusEnum;
 import com.easymusic.entity.enums.PageSize;
 import com.easymusic.entity.po.MusicInfo;
 import com.easymusic.entity.po.MusicInfoAction;
@@ -8,6 +9,7 @@ import com.easymusic.entity.query.MusicInfoActionQuery;
 import com.easymusic.entity.query.MusicInfoQuery;
 import com.easymusic.entity.query.SimplePage;
 import com.easymusic.entity.vo.PaginationResultVO;
+import com.easymusic.exception.BusinessException;
 import com.easymusic.mappers.MusicInfoActionMapper;
 import com.easymusic.mappers.MusicInfoMapper;
 import com.easymusic.service.MusicInfoActionService;
@@ -162,11 +164,15 @@ public class MusicInfoActionServiceImpl implements MusicInfoActionService {
         MusicInfoAction musicInfoAction = this.musicInfoActionMapper.selectByMusicIdAndUserId(musicId, userId);
         if (musicInfoAction != null) {
             this.musicInfoActionMapper.deleteByMusicIdAndUserId(musicId, userId);
+            this.musicInfoMapper.updateMusicGoodCount(musicId, -1);
             return;
         }
         MusicInfo musicInfo = this.musicInfoMapper.selectByMusicId(musicId);
         if (musicInfo == null) {
-            return;
+            throw new BusinessException("作品不存在");
+        }
+        if (!MusicPublishStatusEnum.PUBLISHED.getStatus().equals(musicInfo.getPublishStatus())) {
+            throw new BusinessException("未发布作品不能点赞");
         }
         musicInfoAction = new MusicInfoAction();
         musicInfoAction.setMusicId(musicId);
@@ -174,5 +180,6 @@ public class MusicInfoActionServiceImpl implements MusicInfoActionService {
         musicInfoAction.setActionType(MusicActionTypeEnum.GOOD.getType());
         musicInfoAction.setUserId(userId);
         this.musicInfoActionMapper.insert(musicInfoAction);
+        this.musicInfoMapper.updateMusicGoodCount(musicId, 1);
     }
 }

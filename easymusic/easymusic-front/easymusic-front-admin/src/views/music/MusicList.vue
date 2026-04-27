@@ -8,10 +8,11 @@
           </el-form-item>
         </el-col>
         <el-col :span="5">
-          <el-form-item label="状态" prop="">
-            <el-select clearable placeholder="请选择状态" v-model="searchForm.status">
-              <el-option :value="0" label="禁用"></el-option>
-              <el-option :value="1" label="启用"></el-option>
+          <el-form-item label="发布状态" prop="">
+            <el-select clearable placeholder="请选择发布状态" v-model="searchForm.publishStatus">
+              <el-option :value="0" label="草稿"></el-option>
+              <el-option :value="1" label="已发布"></el-option>
+              <el-option :value="2" label="已隐藏"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -33,6 +34,10 @@
 
     <template #slotMusicStatus="{ index, row }">
       {{ row.musicStatus == 1 ? "已完成" : "创作中......" }}
+    </template>
+
+    <template #slotPublishStatus="{ index, row }">
+      {{ row.publishStatus == 1 ? "已发布" : row.publishStatus == 2 ? "已隐藏" : "草稿" }}
     </template>
 
     <template #slotOperation="{ index, row }">
@@ -78,6 +83,11 @@ const columns = [
     label: '推荐',
     prop: 'commendType',
     scopedSlots: 'slotCommendType',
+  },
+  {
+    label: '发布状态',
+    prop: 'publishStatus',
+    scopedSlots: 'slotPublishStatus',
   },
   {
     label: '状态',

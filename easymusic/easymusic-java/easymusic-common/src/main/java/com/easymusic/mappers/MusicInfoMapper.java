@@ -2,6 +2,8 @@ package com.easymusic.mappers;
 
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Date;
+
 /**
  * 音乐信息 数据库操作接口
  */
@@ -43,4 +45,9 @@ public interface MusicInfoMapper<T, P> extends BaseMapper<T, P> {
     T selectByTaskId(@Param("taskId") String taskId);
 
     void updateMusicCount(@Param("musicId") String musicId);
+
+    void updateMusicGoodCount(@Param("musicId") String musicId, @Param("changeCount") Integer changeCount);
+
+    void updateMusicPublishInfo(@Param("musicId") String musicId, @Param("publishStatus") Integer publishStatus,
+                                @Param("publishTime") Date publishTime);
 }

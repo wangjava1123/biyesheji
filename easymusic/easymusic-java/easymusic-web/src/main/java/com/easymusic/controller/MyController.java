@@ -89,6 +89,7 @@ public class MyController extends ABaseController {
         if (queryLikeMusic != null && queryLikeMusic) {
             musicInfoQuery.setQueryLikeMusic(queryLikeMusic == null ? false : queryLikeMusic);
             musicInfoQuery.setLikeUserId(getTokenUserInfo(null).getUserId());
+            musicInfoQuery.setPublishStatus(1);
         } else {
             musicInfoQuery.setUserId(getTokenUserInfo(null).getUserId());
         }
@@ -132,6 +133,13 @@ public class MyController extends ABaseController {
         musicInfoQuery.setMusicId(musicId);
         musicInfoQuery.setUserId(getTokenUserInfo(null).getUserId());
         musicInfoService.updateByParam(updateInfo, musicInfoQuery);
+        return getSuccessResponseVO(null);
+    }
+
+    @RequestMapping("/changePublishStatus")
+    @GlobalInterceptor(checkLogin = true)
+    public ResponseVO changePublishStatus(@NotEmpty String musicId, @NotNull Integer publishStatus) {
+        musicInfoService.changePublishStatus(musicId, getTokenUserInfo(null).getUserId(), publishStatus);
         return getSuccessResponseVO(null);
     }
 

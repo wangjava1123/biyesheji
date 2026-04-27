@@ -20,6 +20,7 @@ const Api = {
     uploadMusicCover: "/my/uploadMusicCover",//上传音乐封面
     delMusic: "/my/delMusic",//删除音乐
     changeMusicTitle: "/my/changeMusicTitle",//需改音乐标题
+    changePublishStatus: "/my/changePublishStatus",//修改作品发布状态
     integralRecords: "/my/integralRecords",//获取用户积分记录
     loadProduct: "/buy/loadProduct",//获取商品
     getPayInfo: "/buy/getPayInfo",//获取支付信息

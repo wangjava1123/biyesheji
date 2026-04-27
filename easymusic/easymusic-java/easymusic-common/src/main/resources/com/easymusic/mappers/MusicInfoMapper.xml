@@ -35,6 +35,8 @@
         <result column="music_status" property="musicStatus"/>
         <!--音乐类型 0:音乐 1:纯音乐-->
         <result column="music_type" property="musicType"/>
+        <result column="publish_status" property="publishStatus"/>
+        <result column="publish_time" property="publishTime"/>
     </resultMap>
 
 
@@ -42,7 +44,8 @@
     <sql id="base_column_list">
         m.music_id,m.user_id,m.task_id,m.creation_id,m.music_title,
         m.cover,m.audio_path,m.duration,m.lyrics,m.play_count,
-        m.good_count,m.commend_type,m.create_time,m.music_status,m.music_type
+        m.good_count,m.commend_type,m.create_time,m.music_status,m.music_type,
+        m.publish_status,m.publish_time
 
     </sql>
 
@@ -91,6 +94,9 @@
         </if>
         <if test="query.musicType != null">
             and m.music_type = #{query.musicType}
+        </if>
+        <if test="query.publishStatus != null">
+            and m.publish_status = #{query.publishStatus}
         </if>
     </sql>
 
@@ -226,6 +232,12 @@
             <if test="bean.musicType != null">
                 music_type,
             </if>
+            <if test="bean.publishStatus != null">
+                publish_status,
+            </if>
+            <if test="bean.publishTime != null">
+                publish_time,
+            </if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="bean.musicId!=null">
@@ -272,6 +284,12 @@
             </if>
             <if test="bean.musicType!=null">
                 #{bean.musicType},
+            </if>
+            <if test="bean.publishStatus!=null">
+                #{bean.publishStatus},
+            </if>
+            <if test="bean.publishTime!=null">
+                #{bean.publishTime},
             </if>
         </trim>
     </insert>
@@ -325,6 +343,12 @@
             <if test="bean.musicType != null">
                 music_type,
             </if>
+            <if test="bean.publishStatus != null">
+                publish_status,
+            </if>
+            <if test="bean.publishTime != null">
+                publish_time,
+            </if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="bean.musicId!=null">
@@ -371,6 +395,12 @@
             </if>
             <if test="bean.musicType!=null">
                 #{bean.musicType},
+            </if>
+            <if test="bean.publishStatus!=null">
+                #{bean.publishStatus},
+            </if>
+            <if test="bean.publishTime!=null">
+                #{bean.publishTime},
             </if>
         </trim>
         on DUPLICATE key update
@@ -420,6 +450,12 @@
             <if test="bean.musicType!=null">
                 music_type = VALUES(music_type),
             </if>
+            <if test="bean.publishStatus!=null">
+                publish_status = VALUES(publish_status),
+            </if>
+            <if test="bean.publishTime!=null">
+                publish_time = VALUES(publish_time),
+            </if>
         </trim>
     </insert>
 
@@ -440,7 +476,9 @@
         commend_type,
         create_time,
         music_status,
-        music_type
+        music_type,
+        publish_status,
+        publish_time
         )values
         <foreach collection="list" item="item" separator=",">
             (
@@ -458,7 +496,9 @@
             #{item.commendType},
             #{item.createTime},
             #{item.musicStatus},
-            #{item.musicType}
+            #{item.musicType},
+            #{item.publishStatus},
+            #{item.publishTime}
             )
         </foreach>
     </insert>
@@ -480,7 +520,9 @@
         commend_type,
         create_time,
         music_status,
-        music_type
+        music_type,
+        publish_status,
+        publish_time
         )values
         <foreach collection="list" item="item" separator=",">
             (
@@ -498,7 +540,9 @@
             #{item.commendType},
             #{item.createTime},
             #{item.musicStatus},
-            #{item.musicType}
+            #{item.musicType},
+            #{item.publishStatus},
+            #{item.publishTime}
             )
         </foreach>
         on DUPLICATE key update
@@ -516,7 +560,9 @@
         commend_type = VALUES(commend_type),
         create_time = VALUES(create_time),
         music_status = VALUES(music_status),
-        music_type = VALUES(music_type)
+        music_type = VALUES(music_type),
+        publish_status = VALUES(publish_status),
+        publish_time = VALUES(publish_time)
     </insert>
 
     <!--多条件修改-->
@@ -567,6 +613,12 @@
             </if>
             <if test="bean.musicType != null">
                 music_type = #{bean.musicType},
+            </if>
+            <if test="bean.publishStatus != null">
+                publish_status = #{bean.publishStatus},
+            </if>
+            <if test="bean.publishTime != null">
+                publish_time = #{bean.publishTime},
             </if>
         </set>
         <include refid="query_condition"/>
@@ -623,6 +675,12 @@
             </if>
             <if test="bean.musicType != null">
                 music_type = #{bean.musicType},
+            </if>
+            <if test="bean.publishStatus != null">
+                publish_status = #{bean.publishStatus},
+            </if>
+            <if test="bean.publishTime != null">
+                publish_time = #{bean.publishTime},
             </if>
         </set>
         where music_id=#{musicId}
@@ -686,6 +744,12 @@
             <if test="bean.musicType != null">
                 music_type = #{bean.musicType},
             </if>
+            <if test="bean.publishStatus != null">
+                publish_status = #{bean.publishStatus},
+            </if>
+            <if test="bean.publishTime != null">
+                publish_time = #{bean.publishTime},
+            </if>
         </set>
         where task_id=#{taskId}
     </update>
@@ -704,5 +768,18 @@
 
     <update id="updateMusicCount">
         update music_info set play_count = play_count+1 where music_id = #{musicId}
+    </update>
+
+    <update id="updateMusicGoodCount">
+        update music_info
+        set good_count = greatest(good_count + #{changeCount}, 0)
+        where music_id = #{musicId}
+    </update>
+
+    <update id="updateMusicPublishInfo">
+        update music_info
+        set publish_status = #{publishStatus},
+        publish_time = #{publishTime}
+        where music_id = #{musicId}
     </update>
 </mapper>

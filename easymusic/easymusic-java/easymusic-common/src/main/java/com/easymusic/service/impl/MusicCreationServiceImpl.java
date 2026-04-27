@@ -236,6 +236,7 @@ public class MusicCreationServiceImpl implements MusicCreationService {
             musicInfo.setMusicStatus(MusicStatusEnum.CREATING.getStatus());
             musicInfo.setTaskId(item);
             musicInfo.setMusicType(musicCreation.getMusicType());
+            musicInfo.setPublishStatus(MusicPublishStatusEnum.DRAFT.getStatus());
             musicInfoList.add(musicInfo);
 
             //将任务加入到队列

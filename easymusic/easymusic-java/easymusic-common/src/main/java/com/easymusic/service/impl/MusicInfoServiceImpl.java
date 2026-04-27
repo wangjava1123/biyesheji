@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -270,6 +271,30 @@ public class MusicInfoServiceImpl implements MusicInfoService {
      * 轮训查询订单，针对无法使用回调的情况  实际开发中，会使用支回调来处理音乐生成情况
      * 比如本地开发，或者没有线上服务器的情况 API服务没法回调到你本地的服务器上，采用轮询查询处理。
      */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void changePublishStatus(String musicId, String userId, Integer publishStatus) {
+        MusicPublishStatusEnum publishStatusEnum = MusicPublishStatusEnum.getByStatus(publishStatus);
+        if (publishStatusEnum == null) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        MusicInfo musicInfo = this.musicInfoMapper.selectByMusicId(musicId);
+        if (musicInfo == null || !musicInfo.getUserId().equals(userId)) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        if (!MusicStatusEnum.CREATED.getStatus().equals(musicInfo.getMusicStatus())
+                && MusicPublishStatusEnum.PUBLISHED.getStatus().equals(publishStatus)) {
+            throw new BusinessException("作品尚未生成完成，不能发布");
+        }
+        Date publishTime = musicInfo.getPublishTime();
+        if (MusicPublishStatusEnum.PUBLISHED.getStatus().equals(publishStatus)) {
+            publishTime = new Date();
+        } else if (MusicPublishStatusEnum.DRAFT.getStatus().equals(publishStatus)) {
+            publishTime = null;
+        }
+        this.musicInfoMapper.updateMusicPublishInfo(musicId, publishStatus, publishTime);
+    }
+
     @PostConstruct
     public void getMusicFromQueue() {
         if (!appConfig.getAutoCheckMusic()) {

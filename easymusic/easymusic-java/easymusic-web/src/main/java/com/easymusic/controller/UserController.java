@@ -1,6 +1,7 @@
 package com.easymusic.controller;
 
 import com.easymusic.annotation.GlobalInterceptor;
+import com.easymusic.entity.enums.MusicPublishStatusEnum;
 import com.easymusic.entity.enums.MusicStatusEnum;
 import com.easymusic.entity.enums.ResponseCodeEnum;
 import com.easymusic.entity.po.UserInfo;
@@ -46,6 +47,7 @@ public class UserController extends ABaseController {
         MusicInfoQuery musicInfoQuery = new MusicInfoQuery();
         musicInfoQuery.setUserId(userId);
         musicInfoQuery.setMusicStatus(MusicStatusEnum.CREATED.getStatus());
+        musicInfoQuery.setPublishStatus(MusicPublishStatusEnum.PUBLISHED.getStatus());
         Integer musicCount = this.musicInfoService.findCountByParam(musicInfoQuery);
         userInfoVO.setMusicCount(musicCount);
 
@@ -63,6 +65,7 @@ public class UserController extends ABaseController {
         musicInfoQuery.setPageNo(pageNo);
         musicInfoQuery.setUserId(userId);
         musicInfoQuery.setMusicStatus(MusicStatusEnum.CREATED.getStatus());
+        musicInfoQuery.setPublishStatus(MusicPublishStatusEnum.PUBLISHED.getStatus());
         musicInfoQuery.setOrderBy("create_time desc");
         PaginationResultVO resultVO = this.musicInfoService.findListByPage(musicInfoQuery);
         return getSuccessResponseVO(resultVO);

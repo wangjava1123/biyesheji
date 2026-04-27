@@ -92,6 +92,18 @@ public class MusicInfo implements Serializable {
      */
     private Integer musicType;
 
+    /**
+     * 0:鑽夌 1:宸插彂甯? 2:宸查殣钘?
+     */
+    private Integer publishStatus;
+
+    /**
+     * 鍙戝竷鏃堕棿
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date publishTime;
+
     private String avatar;
 
     private String nickName;
@@ -218,6 +230,22 @@ public class MusicInfo implements Serializable {
         return this.musicType;
     }
 
+    public void setPublishStatus(Integer publishStatus) {
+        this.publishStatus = publishStatus;
+    }
+
+    public Integer getPublishStatus() {
+        return publishStatus;
+    }
+
+    public void setPublishTime(Date publishTime) {
+        this.publishTime = publishTime;
+    }
+
+    public Date getPublishTime() {
+        return publishTime;
+    }
+
     public String getAvatar() {
         return avatar;
     }
@@ -244,6 +272,6 @@ public class MusicInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "音乐ID:" + (musicId == null ? "空" : musicId) + "，用户ID:" + (userId == null ? "空" : userId) + "，任务ID:" + (taskId == null ? "空" : taskId) + "，创作ID:" + (creationId == null ? "空" : creationId) + "，标题:" + (musicTitle == null ? "空" : musicTitle) + "，封面:" + (cover == null ? "空" : cover) + "，音乐地址:" + (audioPath == null ? "空" : audioPath) + "，持续时间:" + (duration == null ? "空" : duration) + "，歌词:" + (lyrics == null ? "空" : lyrics) + "，播放数量:" + (playCount == null ? "空" : playCount) + "，点赞数:" + (goodCount == null ? "空" : goodCount) + "，0:未推荐 1:已推荐:" + (commendType == null ? "空" : commendType) + "，创建时间:" + (createTime == null ? "空" : DateUtil.format(createTime, DateTimePatternEnum.YYYY_MM_DD_HH_MM_SS.getPattern())) + "，0:生成音乐中 1:生成完毕:" + (musicStatus == null ? "空" : musicStatus) + "，音乐类型 0:音乐 1:纯音乐:" + (musicType == null ? "空" : musicType);
+        return "音乐ID:" + (musicId == null ? "空" : musicId) + "，用户ID:" + (userId == null ? "空" : userId) + "，任务ID:" + (taskId == null ? "空" : taskId) + "，创作ID:" + (creationId == null ? "空" : creationId) + "，标题:" + (musicTitle == null ? "空" : musicTitle) + "，封面:" + (cover == null ? "空" : cover) + "，音乐地址:" + (audioPath == null ? "空" : audioPath) + "，持续时间:" + (duration == null ? "空" : duration) + "，歌词:" + (lyrics == null ? "空" : lyrics) + "，播放数量:" + (playCount == null ? "空" : playCount) + "，点赞数:" + (goodCount == null ? "空" : goodCount) + "，0:未推荐 1:已推荐:" + (commendType == null ? "空" : commendType) + "，创建时间:" + (createTime == null ? "空" : DateUtil.format(createTime, DateTimePatternEnum.YYYY_MM_DD_HH_MM_SS.getPattern())) + "，0:生成音乐中 1:生成完毕:" + (musicStatus == null ? "空" : musicStatus) + "，音乐类型 0:音乐 1:纯音乐:" + (musicType == null ? "空" : musicType) + "，发布状态:" + (publishStatus == null ? "空" : publishStatus) + "，发布时间:" + (publishTime == null ? "空" : DateUtil.format(publishTime, DateTimePatternEnum.YYYY_MM_DD_HH_MM_SS.getPattern()));
     }
 }

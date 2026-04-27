@@ -103,6 +103,11 @@ public class MusicInfoQuery extends BaseParam {
      */
     private Integer musicType;
 
+    /**
+     * 0:鑽夌 1:宸插彂甯? 2:宸查殣钘?
+     */
+    private Integer publishStatus;
+
     private Boolean queryUser;
 
     private List<String> musicIdList;
@@ -311,6 +316,14 @@ public class MusicInfoQuery extends BaseParam {
 
     public Integer getMusicType() {
         return this.musicType;
+    }
+
+    public Integer getPublishStatus() {
+        return publishStatus;
+    }
+
+    public void setPublishStatus(Integer publishStatus) {
+        this.publishStatus = publishStatus;
     }
 
     public Boolean getQueryUser() {

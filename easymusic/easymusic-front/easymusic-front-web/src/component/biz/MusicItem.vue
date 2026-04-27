@@ -32,6 +32,17 @@
       >
         {{ data.musicTitle || "作品生成中......" }}
       </div>
+      <div class="publish-row" v-if="isOwner && data.musicStatus === 1">
+        <span :class="['publish-tag', `publish-tag-${publishStatusValue}`]">
+          {{ publishStatusText }}
+        </span>
+        <span
+          class="publish-time"
+          v-if="data.publishStatus === 1 && data.publishTime"
+        >
+          发布于 {{ proxy.Utils.formatDate(data.publishTime) }}
+        </span>
+      </div>
       <div class="lyrics" v-if="data.musicType === 0">
         {{ musicLyrics || "--" }}
       </div>
@@ -41,7 +52,7 @@
         {{ proxy.Utils.formatDate(data.createTime) }}
       </div>
     </div>
-    <div class="op-panel">
+    <div class="op-panel" v-if="canPublicInteract">
       <div class="opbtn opbtn-good">
         <ActionGood :data="data"></ActionGood>
       </div>
@@ -49,18 +60,34 @@
         <action-share :data="data"></action-share>
       </div>
     </div>
-    <div class="op-panel" v-if="data.userId == userInfoStore.userInfo.userId">
+    <div class="op-panel manage-panel" v-if="isOwner">
       <template v-if="data.musicStatus === 0"> -- </template>
-      <div class="op-btn" @click="renameMusic" v-if="data.musicStatus === 1">
-        重命名
-      </div>
-      <div
-        class="op-btn"
-        @click="delMusic"
-        v-if="data.musicStatus === 1 || data.musicStatus == 2"
-      >
-        删除
-      </div>
+      <template v-else-if="data.musicStatus === 1">
+        <div class="op-btn" @click="renameMusic">重命名</div>
+        <div
+          class="op-btn"
+          @click="changePublishStatus(1)"
+          v-if="data.publishStatus !== 1"
+        >
+          发布
+        </div>
+        <div
+          class="op-btn"
+          @click="changePublishStatus(2)"
+          v-if="data.publishStatus === 1"
+        >
+          隐藏
+        </div>
+        <div
+          class="op-btn"
+          @click="changePublishStatus(0)"
+          v-if="data.publishStatus !== 0"
+        >
+          草稿
+        </div>
+        <div class="op-btn op-btn-danger" @click="delMusic">删除</div>
+      </template>
+      <div class="op-btn op-btn-danger" @click="delMusic" v-else>删除</div>
     </div>
   </div>
 
@@ -103,6 +130,21 @@ const props = defineProps({
 });
 
 const emits = defineEmits(["playList", "reload"]);
+const publishStatusMap = {
+  0: "草稿",
+  1: "已发布",
+  2: "已隐藏",
+};
+const isOwner = computed(() => {
+  return userInfoStore.userInfo.userId == props.data.userId;
+});
+const publishStatusValue = computed(() => props.data.publishStatus ?? 0);
+const publishStatusText = computed(() => {
+  return publishStatusMap[publishStatusValue.value] || "草稿";
+});
+const canPublicInteract = computed(() => {
+  return props.data.musicStatus === 1 && publishStatusValue.value === 1;
+});
 const playMusic = (jumpDetail) => {
   if (props.data.musicStatus != 1) {
     return;
@@ -174,6 +216,36 @@ const renameMusic = () => {
 const updateTitle = (title) => {
   props.data.musicTitle = title;
 };
+
+const changePublishStatus = (publishStatus) => {
+  const actionText = publishStatusMap[publishStatus] || "更新";
+  proxy.Confirm({
+    message: `确定将作品[${props.data.musicTitle}]设为${actionText}吗?`,
+    okfun: async () => {
+      let result = await proxy.Request({
+        url: proxy.Api.changePublishStatus,
+        params: {
+          musicId: props.data.musicId,
+          publishStatus,
+        },
+      });
+      if (!result) {
+        return;
+      }
+      props.data.publishStatus = publishStatus;
+      if (publishStatus === 1) {
+        props.data.publishTime = new Date();
+      } else if (publishStatus === 0) {
+        props.data.publishTime = null;
+      }
+      if (musicPlayStore.currentMusic?.musicId === props.data.musicId) {
+        musicPlayStore.currentMusic.publishStatus = publishStatus;
+        musicPlayStore.currentMusic.publishTime = props.data.publishTime;
+      }
+      proxy.Message.success("状态更新成功");
+    },
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -244,6 +316,35 @@ const updateTitle = (title) => {
       white-space: nowrap;
       font-size: 12px;
     }
+    .publish-row {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      .publish-tag {
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        line-height: 18px;
+      }
+      .publish-tag-0 {
+        background: rgba(255, 255, 255, 0.12);
+        color: #d9d9d9;
+      }
+      .publish-tag-1 {
+        background: rgba(103, 194, 58, 0.18);
+        color: #7dd857;
+      }
+      .publish-tag-2 {
+        background: rgba(230, 162, 60, 0.18);
+        color: #f4b24d;
+      }
+      .publish-time {
+        font-size: 12px;
+        color: var(--text);
+      }
+    }
     .time {
       margin-top: 5px;
       font-size: 13px;
@@ -260,6 +361,15 @@ const updateTitle = (title) => {
     .op-btn {
       cursor: pointer;
     }
+    .op-btn-danger {
+      color: #f56c6c;
+    }
+  }
+  .manage-panel {
+    width: 220px;
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 }
 </style>

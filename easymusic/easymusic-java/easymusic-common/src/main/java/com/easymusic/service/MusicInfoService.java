@@ -95,5 +95,7 @@ public interface MusicInfoService {
 
     void updateMusicCount(String musicId);
 
+    void changePublishStatus(String musicId, String userId, Integer publishStatus);
+
     void musicCreated(MusicCreationResultDTO resultDTO);
 }

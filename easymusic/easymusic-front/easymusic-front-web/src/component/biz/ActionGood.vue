@@ -35,6 +35,7 @@ const goodMusic = async () => {
   if (!userInfoStore.checkLogin()) {
     return;
   }
+  const nextDoGood = !props.data.doGood;
   let result = await proxy.Request({
     url: proxy.Api.doGood,
     showLoading: false,
@@ -45,10 +46,15 @@ const goodMusic = async () => {
   if (!result) {
     return;
   }
-  props.data.doGood = !props.data.doGood;
+  props.data.doGood = nextDoGood;
+  props.data.goodCount = Math.max(
+    (props.data.goodCount || 0) + (nextDoGood ? 1 : -1),
+    0
+  );
   //判断当前正在播放的是不是该音乐，播放器和列表保持同步
   if (musicPlayStore.currentMusic?.musicId == props.data.musicId) {
     musicPlayStore.currentMusic.doGood = props.data.doGood;
+    musicPlayStore.currentMusic.goodCount = props.data.goodCount;
   }
 };
 
