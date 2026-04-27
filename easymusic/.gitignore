@@ -1,0 +1,15 @@
+﻿**/target/
+**/build/
+**/out/
+
+**/.idea/
+*.iml
+**/.vscode/
+.claude/
+
+**/node_modules/
+**/dist/
+easymusic-java/file_web_app/
+
+*.class
+*.log

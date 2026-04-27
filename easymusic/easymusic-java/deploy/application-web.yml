@@ -1,0 +1,59 @@
+﻿server:
+  port: 8090
+  servlet:
+    context-path: /api
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/ll-music?allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2B8&characterEncoding=utf8
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  task:
+    scheduling:
+      pool:
+        size: 5
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+project:
+  folder: C:/music_project/file_web_app
+
+log:
+  root:
+    level: debug
+
+web:
+  domain: http://81.71.17.51:8090
+
+tianpuyue:
+  api:
+    key: Tempo--c74f7f7b6c83d44138e07fa1f3d9d34c25dp
+    domain: https://api.tianpuyue.cn
+    courseOrderId: 12312
+
+pay:
+  wechat:
+    appid: wx123456
+    mchid: 16123456
+    serialNo: 5D31441111111111111
+    apiclientKeypath: c:/webser/web_app/easymusic/key/apiclient_key.pem
+    apiV3key: 1234567890
+  payType: laoluo
+  payDomain: http://easyshop.byte361.com/api
+  courseOrderId: 12312
+
+auto:
+  checkPay: true
+  checkMusic: true
+
+oss:
+  endpoint: oss-cn-beijing.aliyuncs.com
+  bucket: wangjinmusic
+  accessKeyId: ${OSS_ACCESS_KEY_ID:}
+  accessKeySecret: ${OSS_ACCESS_KEY_SECRET:}
+
+
+
