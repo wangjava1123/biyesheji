@@ -258,6 +258,7 @@ public class MusicInfoServiceImpl implements MusicInfoService {
         String coverPath = fileUtils.uploadFile(cover, null, fileName) + "?t=" + System.currentTimeMillis();
         MusicInfo updateInfo = new MusicInfo();
         updateInfo.setCover(coverPath);
+        updateInfo.setCoverSource(MusicCoverSourceEnum.MANUAL_UPLOAD.getSource());
         musicInfoMapper.updateByMusicId(updateInfo, musicId);
         return coverPath;
     }

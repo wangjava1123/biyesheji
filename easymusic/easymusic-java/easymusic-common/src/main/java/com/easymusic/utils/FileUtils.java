@@ -9,6 +9,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -55,6 +56,35 @@ public class FileUtils {
             file.transferTo(new File(localFolderPath + fileName));
         } catch (IOException e) {
             log.error("图片上传失败", e);
+        }
+        return folderName + fileName;
+    }
+
+    public String uploadBytes(byte[] data, String folderName, String fileName) {
+        if (data == null || data.length == 0) {
+            throw new RuntimeException("文件内容为空");
+        }
+        if (StringTools.isEmpty(folderName)) {
+            folderName = DateUtil.format(new Date(), DateTimePatternEnum.YYYYMM.getPattern()) + "/";
+        }
+        if (StringTools.isEmpty(fileName)) {
+            fileName = System.currentTimeMillis() + Constants.IMAGE_SUFFIX;
+        }
+        if (useOss()) {
+            String ossKey = Constants.FILE_FOLDER_FILE + folderName + fileName;
+            return ossUtils.uploadFile(new ByteArrayInputStream(data), ossKey);
+        }
+
+        String localFolderPath = appConfig.getProjectFolder() + Constants.FILE_FOLDER_FILE + folderName;
+        File folder = new File(localFolderPath);
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        try {
+            org.apache.commons.io.FileUtils.writeByteArrayToFile(new File(localFolderPath + fileName), data);
+        } catch (IOException e) {
+            log.error("写入字节文件失败", e);
+            throw new RuntimeException("文件上传失败", e);
         }
         return folderName + fileName;
     }

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easymusic.mappers.MusicCoverCreationMapper">
+
+    <resultMap id="base_result_map" type="com.easymusic.entity.po.MusicCoverCreation">
+        <result column="cover_id" property="coverId"/>
+        <result column="music_id" property="musicId"/>
+        <result column="user_id" property="userId"/>
+        <result column="creation_id" property="creationId"/>
+        <result column="prompt" property="prompt"/>
+        <result column="style" property="style"/>
+        <result column="model" property="model"/>
+        <result column="integral" property="integral"/>
+        <result column="task_id" property="taskId"/>
+        <result column="cover_url" property="coverUrl"/>
+        <result column="status" property="status"/>
+        <result column="fail_reason" property="failReason"/>
+        <result column="create_time" property="createTime"/>
+        <result column="finish_time" property="finishTime"/>
+    </resultMap>
+
+    <sql id="base_column_list">
+        c.cover_id,c.music_id,c.user_id,c.creation_id,c.prompt,c.style,c.model,c.integral,
+        c.task_id,c.cover_url,c.status,c.fail_reason,c.create_time,c.finish_time
+    </sql>
+
+    <insert id="insert" parameterType="com.easymusic.entity.po.MusicCoverCreation">
+        INSERT INTO music_cover_creation(
+            cover_id,
+            music_id,
+            user_id,
+            creation_id,
+            prompt,
+            style,
+            model,
+            integral,
+            task_id,
+            cover_url,
+            status,
+            fail_reason,
+            create_time,
+            finish_time
+        ) VALUES (
+            #{bean.coverId},
+            #{bean.musicId},
+            #{bean.userId},
+            #{bean.creationId},
+            #{bean.prompt},
+            #{bean.style},
+            #{bean.model},
+            #{bean.integral},
+            #{bean.taskId},
+            #{bean.coverUrl},
+            #{bean.status},
+            #{bean.failReason},
+            #{bean.createTime},
+            #{bean.finishTime}
+        )
+    </insert>
+
+    <update id="updateByCoverId" parameterType="com.easymusic.entity.po.MusicCoverCreation">
+        UPDATE music_cover_creation
+        <set>
+            <if test="bean.musicId != null">
+                music_id = #{bean.musicId},
+            </if>
+            <if test="bean.userId != null">
+                user_id = #{bean.userId},
+            </if>
+            <if test="bean.creationId != null">
+                creation_id = #{bean.creationId},
+            </if>
+            <if test="bean.prompt != null">
+                prompt = #{bean.prompt},
+            </if>
+            <if test="bean.style != null">
+                style = #{bean.style},
+            </if>
+            <if test="bean.model != null">
+                model = #{bean.model},
+            </if>
+            <if test="bean.integral != null">
+                integral = #{bean.integral},
+            </if>
+            <if test="bean.taskId != null">
+                task_id = #{bean.taskId},
+            </if>
+            <if test="bean.coverUrl != null">
+                cover_url = #{bean.coverUrl},
+            </if>
+            <if test="bean.status != null">
+                status = #{bean.status},
+            </if>
+            <if test="bean.failReason != null">
+                fail_reason = #{bean.failReason},
+            </if>
+            <if test="bean.finishTime != null">
+                finish_time = #{bean.finishTime},
+            </if>
+        </set>
+        where cover_id = #{coverId}
+    </update>
+
+    <select id="selectByCoverId" resultMap="base_result_map">
+        SELECT <include refid="base_column_list"/>
+        FROM music_cover_creation c
+        WHERE c.cover_id = #{coverId}
+    </select>
+
+</mapper>

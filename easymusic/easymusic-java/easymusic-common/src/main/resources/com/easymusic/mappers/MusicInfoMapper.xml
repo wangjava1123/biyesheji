@@ -37,6 +37,8 @@
         <result column="music_type" property="musicType"/>
         <result column="publish_status" property="publishStatus"/>
         <result column="publish_time" property="publishTime"/>
+        <result column="cover_source" property="coverSource"/>
+        <result column="cover_generate_count" property="coverGenerateCount"/>
     </resultMap>
 
 
@@ -45,7 +47,7 @@
         m.music_id,m.user_id,m.task_id,m.creation_id,m.music_title,
         m.cover,m.audio_path,m.duration,m.lyrics,m.play_count,
         m.good_count,m.commend_type,m.create_time,m.music_status,m.music_type,
-        m.publish_status,m.publish_time
+        m.publish_status,m.publish_time,m.cover_source,m.cover_generate_count
 
     </sql>
 
@@ -620,6 +622,12 @@
             <if test="bean.publishTime != null">
                 publish_time = #{bean.publishTime},
             </if>
+            <if test="bean.coverSource != null">
+                cover_source = #{bean.coverSource},
+            </if>
+            <if test="bean.coverGenerateCount != null">
+                cover_generate_count = #{bean.coverGenerateCount},
+            </if>
         </set>
         <include refid="query_condition"/>
     </update>
@@ -681,6 +689,12 @@
             </if>
             <if test="bean.publishTime != null">
                 publish_time = #{bean.publishTime},
+            </if>
+            <if test="bean.coverSource != null">
+                cover_source = #{bean.coverSource},
+            </if>
+            <if test="bean.coverGenerateCount != null">
+                cover_generate_count = #{bean.coverGenerateCount},
             </if>
         </set>
         where music_id=#{musicId}
@@ -749,6 +763,12 @@
             </if>
             <if test="bean.publishTime != null">
                 publish_time = #{bean.publishTime},
+            </if>
+            <if test="bean.coverSource != null">
+                cover_source = #{bean.coverSource},
+            </if>
+            <if test="bean.coverGenerateCount != null">
+                cover_generate_count = #{bean.coverGenerateCount},
             </if>
         </set>
         where task_id=#{taskId}

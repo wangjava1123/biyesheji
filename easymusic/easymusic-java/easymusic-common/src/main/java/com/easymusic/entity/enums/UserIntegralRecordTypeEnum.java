@@ -10,7 +10,11 @@ public enum UserIntegralRecordTypeEnum {
     CREATE_MUSIC(1, "创作音乐"),
     RECHARGE(2, "充值"),
     ADMIN_ADD(3, "管理员赠送"),
-    ADMIN_DEDUCT(4, "管理员扣减");
+    ADMIN_DEDUCT(4, "管理员扣减"),
+    PROMPT_OPTIMIZE(5, "提示词增强"),
+    PROMPT_OPTIMIZE_BACK(6, "提示词增强退回"),
+    CREATE_COVER(7, "AI封面生成"),
+    CREATE_COVER_BACK(8, "AI封面生成退回");
 
 
     private Integer type;
