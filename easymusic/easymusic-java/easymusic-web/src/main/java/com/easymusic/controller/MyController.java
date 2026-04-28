@@ -83,7 +83,7 @@ public class MyController extends ABaseController {
 
     @RequestMapping("/loadMyMusic")
     @GlobalInterceptor
-    public ResponseVO loadMyMusic(Integer pageNo, Boolean queryLikeMusic) {
+    public ResponseVO loadMyMusic(Integer pageNo, Boolean queryLikeMusic, Integer publishStatus, Integer musicStatus) {
         TokenUserInfoDTO tokenUserInfoDTO = getTokenUserInfo(null);
         if (tokenUserInfoDTO == null) {
             return getSuccessResponseVO(new PaginationResultVO<>());
@@ -99,6 +99,8 @@ public class MyController extends ABaseController {
             musicInfoQuery.setPublishStatus(1);
         } else {
             musicInfoQuery.setUserId(getTokenUserInfo(null).getUserId());
+            musicInfoQuery.setPublishStatus(publishStatus);
+            musicInfoQuery.setMusicStatus(musicStatus);
         }
         PaginationResultVO resultVO = this.musicInfoService.findListByPage(musicInfoQuery);
         return getSuccessResponseVO(resultVO);

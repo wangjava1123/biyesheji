@@ -152,9 +152,12 @@ public class MusicInfoServiceImpl implements MusicInfoService {
     @Override
     public MusicInfo getMusicInfoByMusicId(String musicId) {
         MusicInfo musicInfo = this.musicInfoMapper.selectByMusicId(musicId);
-        if (null != musicInfo) {
+        if (null != musicInfo && StringTools.isEmpty(musicInfo.getNickName())) {
             UserInfo userInfo = this.userInfoMapper.selectByUserId(musicInfo.getUserId());
-            musicInfo.setNickName(userInfo.getNickName());
+            if (userInfo != null) {
+                musicInfo.setNickName(userInfo.getNickName());
+                musicInfo.setAvatar(userInfo.getAvatar());
+            }
         }
         return musicInfo;
     }

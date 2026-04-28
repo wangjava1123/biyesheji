@@ -39,6 +39,14 @@
         <result column="publish_time" property="publishTime"/>
         <result column="cover_source" property="coverSource"/>
         <result column="cover_generate_count" property="coverGenerateCount"/>
+        <result column="nick_name" property="nickName"/>
+        <result column="avatar" property="avatar"/>
+        <result column="creation_prompt" property="creationPrompt"/>
+        <result column="origin_prompt" property="originPrompt"/>
+        <result column="prompt_source_type" property="promptSourceType"/>
+        <result column="prompt_record_id" property="promptRecordId"/>
+        <result column="creation_model" property="creationModel"/>
+        <result column="creation_mode_type" property="creationModeType"/>
     </resultMap>
 
 
@@ -47,7 +55,9 @@
         m.music_id,m.user_id,m.task_id,m.creation_id,m.music_title,
         m.cover,m.audio_path,m.duration,m.lyrics,m.play_count,
         m.good_count,m.commend_type,m.create_time,m.music_status,m.music_type,
-        m.publish_status,m.publish_time,m.cover_source,m.cover_generate_count
+        m.publish_status,m.publish_time,m.cover_source,m.cover_generate_count,
+        c.prompt as creation_prompt,c.origin_prompt,c.prompt_source_type,
+        c.prompt_record_id,c.model as creation_model,c.mode_type as creation_mode_type
 
     </sql>
 
@@ -161,6 +171,7 @@
             )) as doGood
         </if>
         FROM music_info m
+        left join music_creation c on c.creation_id = m.creation_id
         <if test="query.queryUser">
             left join user_info u on u.user_id = m.user_id
         </if>
@@ -708,8 +719,11 @@
     <!-- 根据PrimaryKey获取对象-->
     <select id="selectByMusicId" resultMap="base_result_map">
         select
-        <include refid="base_column_list"/>
-        from music_info m where music_id=#{musicId}
+        <include refid="base_column_list"/>,u.nick_name,u.avatar
+        from music_info m
+        left join music_creation c on c.creation_id = m.creation_id
+        left join user_info u on u.user_id = m.user_id
+        where m.music_id=#{musicId}
     </select>
 
     <!-- 根据TaskId修改-->
@@ -782,8 +796,11 @@
     <!-- 根据PrimaryKey获取对象-->
     <select id="selectByTaskId" resultMap="base_result_map">
         select
-        <include refid="base_column_list"/>
-        from music_info m where task_id=#{taskId}
+        <include refid="base_column_list"/>,u.nick_name,u.avatar
+        from music_info m
+        left join music_creation c on c.creation_id = m.creation_id
+        left join user_info u on u.user_id = m.user_id
+        where m.task_id=#{taskId}
     </select>
 
     <update id="updateMusicCount">

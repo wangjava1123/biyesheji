@@ -36,6 +36,13 @@
         <span class="cover-count">AI 封面 {{ data.coverGenerateCount || 0 }} 次</span>
       </div>
 
+      <div class="prompt-row" v-if="isOwner && promptPreview">
+        <span :class="['prompt-tag', `prompt-tag-${promptSourceValue}`]">
+          {{ promptSourceText }}
+        </span>
+        <span class="prompt-preview">{{ promptPreview }}</span>
+      </div>
+
       <div class="lyrics" v-if="data.musicType === 0">
         {{ musicLyrics || "--" }}
       </div>
@@ -62,6 +69,7 @@
       </template>
       <template v-else-if="data.musicStatus === 1">
         <div class="op-btn" @click="renameMusic">重命名</div>
+        <div class="op-btn" @click="continueCreate" v-if="data.creationId">继续创作</div>
         <div class="op-btn" @click="openAICoverDialog">AI 封面</div>
         <div class="op-btn" @click="changePublishStatus(1)" v-if="data.publishStatus !== 1">
           发布
@@ -123,6 +131,11 @@ const coverSourceMap = {
   1: "AI 封面",
 };
 
+const promptSourceMap = {
+  0: "手写提示词",
+  1: "AI 增强",
+};
+
 const isOwner = computed(() => {
   return userInfoStore.userInfo.userId === props.data.userId;
 });
@@ -135,6 +148,15 @@ const publishStatusText = computed(() => {
 const coverSourceValue = computed(() => props.data.coverSource ?? 0);
 const coverSourceText = computed(() => {
   return coverSourceMap[coverSourceValue.value] || "未设置封面";
+});
+
+const promptSourceValue = computed(() => props.data.promptSourceType ?? 0);
+const promptSourceText = computed(() => {
+  return promptSourceMap[promptSourceValue.value] || "手写提示词";
+});
+
+const promptPreview = computed(() => {
+  return props.data.originPrompt || props.data.creationPrompt || "";
 });
 
 const canPublicInteract = computed(() => {
@@ -235,6 +257,13 @@ const delMusic = () => {
 const musicTitleUpdateRef = ref();
 const renameMusic = () => {
   musicTitleUpdateRef.value.show(props.data);
+};
+
+const continueCreate = () => {
+  if (!props.data.creationId) {
+    return;
+  }
+  router.push(`/idea/${props.data.creationId}`);
 };
 
 const updateTitle = (title) => {
@@ -350,7 +379,8 @@ const changePublishStatus = (publishStatus) => {
 }
 
 .publish-row,
-.cover-row {
+.cover-row,
+.prompt-row {
   margin-top: 8px;
   display: flex;
   align-items: center;
@@ -359,7 +389,8 @@ const changePublishStatus = (publishStatus) => {
 }
 
 .publish-tag,
-.cover-tag {
+.cover-tag,
+.prompt-tag {
   padding: 2px 9px;
   border-radius: 999px;
   font-size: 12px;
@@ -391,10 +422,30 @@ const changePublishStatus = (publishStatus) => {
   color: #8ec5ff;
 }
 
+.prompt-tag-0 {
+  background: rgba(255, 255, 255, 0.12);
+  color: #d9d9d9;
+}
+
+.prompt-tag-1 {
+  background: rgba(255, 123, 84, 0.18);
+  color: #ffb38a;
+}
+
 .publish-time,
 .cover-count {
   font-size: 12px;
   color: var(--text);
+}
+
+.prompt-preview {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.74);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .lyrics {

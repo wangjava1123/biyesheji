@@ -55,6 +55,31 @@
           </div>
         </div>
 
+        <div class="creation-panel" v-if="isOwner && (musicInfo.originPrompt || musicInfo.creationPrompt)">
+          <div class="creation-head">
+            <div class="creation-title">创作摘要</div>
+            <div class="creation-tags">
+              <span class="meta-tag">{{ promptSourceText }}</span>
+              <span class="meta-tag" v-if="musicInfo.creationModeType !== undefined && musicInfo.creationModeType !== null">
+                {{ creationModeText }}
+              </span>
+              <span class="meta-tag" v-if="musicInfo.creationModel">
+                模型 {{ musicInfo.creationModel }}
+              </span>
+            </div>
+          </div>
+          <div class="creation-grid">
+            <div class="creation-card" v-if="musicInfo.originPrompt">
+              <div class="creation-card-title">一句话需求</div>
+              <div class="creation-card-content">{{ musicInfo.originPrompt }}</div>
+            </div>
+            <div class="creation-card creation-card-wide" v-if="musicInfo.creationPrompt">
+              <div class="creation-card-title">最终音乐提示词</div>
+              <div class="creation-card-content">{{ musicInfo.creationPrompt }}</div>
+            </div>
+          </div>
+        </div>
+
         <div class="lyrics-panel" v-if="musicInfo.musicType === 0">
           <div class="lyrics-title">歌词</div>
           <div
@@ -109,6 +134,16 @@ const coverSourceMap = {
   1: "当前封面：AI 生成",
 };
 
+const promptSourceMap = {
+  0: "创作方式：手写提示词",
+  1: "创作方式：AI 增强",
+};
+
+const modeTypeMap = {
+  0: "简单模式",
+  1: "高级模式",
+};
+
 const isOwner = computed(() => {
   return userInfoStore.userInfo.userId === musicInfo.value.userId;
 });
@@ -119,6 +154,14 @@ const publishStatusText = computed(() => {
 
 const coverSourceText = computed(() => {
   return coverSourceMap[musicInfo.value.coverSource ?? 0] || "当前封面：未设置";
+});
+
+const promptSourceText = computed(() => {
+  return promptSourceMap[musicInfo.value.promptSourceType ?? 0] || "创作方式：手写提示词";
+});
+
+const creationModeText = computed(() => {
+  return modeTypeMap[musicInfo.value.creationModeType ?? 0] || "简单模式";
 });
 
 const canPublicInteract = computed(() => {
@@ -331,6 +374,62 @@ watch(
   background: rgba(255, 255, 255, 0.05);
 }
 
+.creation-panel {
+  margin-top: 24px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.creation-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.creation-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.creation-tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.creation-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.creation-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.creation-card-wide {
+  grid-column: span 2;
+}
+
+.creation-card-title {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.creation-card-content {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .lyrics-title {
   font-size: 20px;
   margin-bottom: 10px;
@@ -364,8 +463,17 @@ watch(
 
   .meta-panel,
   .action-panel,
-  .action-buttons {
+  .action-buttons,
+  .creation-tags {
     justify-content: center;
+  }
+
+  .creation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .creation-card-wide {
+    grid-column: span 1;
   }
 
   .lyrics-panel {
