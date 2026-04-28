@@ -57,6 +57,8 @@ public class AdminDashboardVO {
 
     private Double coverSuccessRate;
 
+    private List<AdminDashboardTrendVO> last7DaysTrend;
+
     private List<AdminDashboardModelVO> topModels;
 
     private List<AdminDashboardMusicVO> hotMusics;
@@ -269,6 +271,14 @@ public class AdminDashboardVO {
 
     public void setCoverSuccessRate(Double coverSuccessRate) {
         this.coverSuccessRate = coverSuccessRate;
+    }
+
+    public List<AdminDashboardTrendVO> getLast7DaysTrend() {
+        return last7DaysTrend;
+    }
+
+    public void setLast7DaysTrend(List<AdminDashboardTrendVO> last7DaysTrend) {
+        this.last7DaysTrend = last7DaysTrend;
     }
 
     public List<AdminDashboardModelVO> getTopModels() {

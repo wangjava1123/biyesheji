@@ -5,12 +5,15 @@
         <div class="eyebrow">EasyMusic Admin Dashboard</div>
         <h1>平台统计看板</h1>
         <p>
-          聚合当前用户、创作、作品、封面、积分和充值口径，用于毕业设计阶段展示与后续联调前核对。
+          聚合当前用户、创作、发布、封面、积分和充值口径，并补最近 7 日趋势，便于毕业设计答辩展示和联调前核对。
         </p>
       </div>
       <div class="hero-actions">
         <el-button type="primary" @click="loadDashboard">刷新数据</el-button>
-        <div class="hero-tip">当前为实时聚合版本，未接入日汇总表。</div>
+        <div class="hero-tip">
+          最近刷新：{{ lastLoadedAt || "未刷新" }}<br />
+          当前为实时聚合版本，近 7 日趋势按自然日统计。
+        </div>
       </div>
     </section>
 
@@ -23,6 +26,96 @@
     </section>
 
     <section class="dashboard-grid">
+      <article class="panel panel-span-8">
+        <div class="panel-header">
+          <div>
+            <h3>近 7 日主链路趋势</h3>
+            <p>按自然日观察创作、成功、发布和封面任务的推进节奏。</p>
+          </div>
+        </div>
+        <div class="trend-overview">
+          <div class="trend-total-card" v-for="item in contentTrendSummary" :key="item.label">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.desc }}</small>
+          </div>
+        </div>
+        <div class="trend-legend">
+          <span v-for="item in trendLegend" :key="item.key">
+            <i :style="{ background: item.color }"></i>
+            {{ item.label }}
+          </span>
+        </div>
+        <div v-if="contentTrendDays.length" class="trend-columns">
+          <div class="trend-day" v-for="item in contentTrendDays" :key="item.trendDate">
+            <div class="trend-bars">
+              <div class="trend-bar-group" v-for="metric in item.metrics" :key="metric.key">
+                <span class="trend-bar" :style="{ height: `${metric.height}%`, background: metric.color }"></span>
+                <em>{{ formatCompactCount(metric.value) }}</em>
+              </div>
+            </div>
+            <div class="trend-day-meta">
+              <strong>{{ item.dateLabel }}</strong>
+              <span>{{ item.weekdayLabel }}</span>
+              <small>新增 {{ formatCount(item.newUserCount) }}</small>
+            </div>
+          </div>
+        </div>
+        <NoData v-else msg="暂无近 7 日趋势数据"></NoData>
+      </article>
+
+      <article class="panel panel-span-4">
+        <div class="panel-header">
+          <div>
+            <h3>运营趋势与展示口径</h3>
+            <p>补收支节奏、用户变化和答辩讲解时需要统一的统计说明。</p>
+          </div>
+        </div>
+        <div class="ops-summary">
+          <div class="ops-summary-card" v-for="item in opsTrendSummary" :key="item.label">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.desc }}</small>
+          </div>
+        </div>
+        <div v-if="opsTrendDays.length" class="ops-trend-list">
+          <div class="ops-trend-row" v-for="item in opsTrendDays" :key="item.trendDate">
+            <div class="ops-trend-date">
+              <strong>{{ item.dateLabel }}</strong>
+              <span>{{ item.weekdayLabel }}</span>
+            </div>
+            <div class="ops-trend-lines">
+              <div class="ops-trend-line">
+                <div class="ops-line-head">
+                  <span>积分消耗</span>
+                  <strong>{{ formatCount(item.integralConsume) }}</strong>
+                </div>
+                <div class="ops-line-bar">
+                  <span :style="{ width: `${item.integralPercent}%` }"></span>
+                </div>
+              </div>
+              <div class="ops-trend-line">
+                <div class="ops-line-head">
+                  <span>充值金额</span>
+                  <strong>{{ formatMoney(item.rechargeAmount) }}</strong>
+                </div>
+                <div class="ops-line-bar is-accent">
+                  <span :style="{ width: `${item.rechargePercent}%` }"></span>
+                </div>
+              </div>
+            </div>
+            <div class="ops-trend-side">新增 {{ formatCount(item.newUserCount) }}</div>
+          </div>
+        </div>
+        <NoData v-else msg="暂无运营趋势数据"></NoData>
+        <div class="dashboard-notes">
+          <div class="note-item" v-for="item in dashboardNotes" :key="item.label">
+            <strong>{{ item.label }}</strong>
+            <span>{{ item.desc }}</span>
+          </div>
+        </div>
+      </article>
+
       <article class="panel panel-span-7">
         <div class="panel-header">
           <div>
@@ -231,6 +324,12 @@
 import { computed, getCurrentInstance, onMounted, ref } from "vue";
 
 const { proxy } = getCurrentInstance();
+const trendLegend = [
+  { key: "creationCount", label: "创作", color: "#2563eb" },
+  { key: "successMusicCount", label: "成功", color: "#10b981" },
+  { key: "publishCount", label: "发布", color: "#f59e0b" },
+  { key: "coverTaskCount", label: "封面", color: "#8b5cf6" },
+];
 
 const createEmptyDashboard = () => ({
   totalUserCount: 0,
@@ -259,6 +358,7 @@ const createEmptyDashboard = () => ({
   todayRechargeAmount: 0,
   musicSuccessRate: 0,
   coverSuccessRate: 0,
+  last7DaysTrend: [],
   topModels: [],
   hotMusics: [],
   hotCreators: [],
@@ -266,37 +366,63 @@ const createEmptyDashboard = () => ({
 
 const loading = ref(false);
 const dashboardData = ref(createEmptyDashboard());
+const lastLoadedAt = ref("");
+const trendList = computed(() =>
+  Array.isArray(dashboardData.value.last7DaysTrend) ? dashboardData.value.last7DaysTrend : []
+);
+
+const getTrendPoint = (offset) => {
+  const list = trendList.value;
+  const index = list.length - 1 - offset;
+  if (index < 0 || !list[index]) {
+    return {};
+  }
+  return list[index];
+};
+
+const todayTrend = computed(() => getTrendPoint(0));
+const yesterdayTrend = computed(() => getTrendPoint(1));
+
+const sevenDayTotals = computed(() => ({
+  newUserCount: sumTrendField("newUserCount"),
+  creationCount: sumTrendField("creationCount"),
+  successMusicCount: sumTrendField("successMusicCount"),
+  publishCount: sumTrendField("publishCount"),
+  coverTaskCount: sumTrendField("coverTaskCount"),
+  integralConsume: sumTrendField("integralConsume"),
+  rechargeAmount: trendList.value.reduce((sum, item) => sum + Number(item.rechargeAmount || 0), 0),
+}));
 
 const summaryCards = computed(() => [
   {
     label: "今日创作数",
     value: formatCount(dashboardData.value.todayCreationCount),
-    desc: `今日成功 ${formatCount(dashboardData.value.todaySuccessMusicCount)} 首`,
+    desc: `${formatDeltaCount(dashboardData.value.todayCreationCount, todayTrend.value.creationCount, yesterdayTrend.value.creationCount)} · 今日成功 ${formatCount(dashboardData.value.todaySuccessMusicCount)} 首`,
   },
   {
     label: "音乐成功率",
     value: formatPercent(dashboardData.value.musicSuccessRate),
-    desc: `累计成功 ${formatCount(dashboardData.value.successMusicCount)} / ${formatCount(dashboardData.value.totalMusicCount)}`,
+    desc: `近 7 日成功 ${formatCount(sevenDayTotals.value.successMusicCount)} / 创作 ${formatCount(sevenDayTotals.value.creationCount)}`,
   },
   {
     label: "封面成功率",
     value: formatPercent(dashboardData.value.coverSuccessRate),
-    desc: `累计封面任务 ${formatCount(dashboardData.value.totalCoverTaskCount)} 个`,
+    desc: `近 7 日封面任务 ${formatCount(sevenDayTotals.value.coverTaskCount)} 个`,
   },
   {
     label: "今日积分消耗",
     value: formatCount(dashboardData.value.todayIntegralConsume),
-    desc: "音乐、封面和提示词增强的扣减总量",
+    desc: `${formatDeltaCount(dashboardData.value.todayIntegralConsume, todayTrend.value.integralConsume, yesterdayTrend.value.integralConsume)} · 近 7 日累计 ${formatCount(sevenDayTotals.value.integralConsume)}`,
   },
   {
     label: "今日充值金额",
     value: formatMoney(dashboardData.value.todayRechargeAmount),
-    desc: "仅统计已支付订单",
+    desc: `${formatDeltaMoney(dashboardData.value.todayRechargeAmount, todayTrend.value.rechargeAmount, yesterdayTrend.value.rechargeAmount)} · 近 7 日累计 ${formatMoney(sevenDayTotals.value.rechargeAmount)}`,
   },
   {
     label: "活跃创作者",
     value: formatCount(dashboardData.value.activeCreatorCount),
-    desc: `今日新增用户 ${formatCount(dashboardData.value.todayNewUserCount)} 人`,
+    desc: `近 7 日新增用户 ${formatCount(sevenDayTotals.value.newUserCount)} 人`,
   },
 ]);
 
@@ -385,6 +511,108 @@ const coverSourceItems = computed(() =>
   )
 );
 
+const contentTrendSummary = computed(() => [
+  {
+    label: "7 日创作",
+    value: formatCount(sevenDayTotals.value.creationCount),
+    desc: `日均 ${formatCount(calculateAverage(sevenDayTotals.value.creationCount, trendList.value.length))} 次`,
+  },
+  {
+    label: "7 日成功",
+    value: formatCount(sevenDayTotals.value.successMusicCount),
+    desc: `成功率 ${formatPercent(calculateRateValue(sevenDayTotals.value.successMusicCount, sevenDayTotals.value.creationCount))}`,
+  },
+  {
+    label: "7 日发布",
+    value: formatCount(sevenDayTotals.value.publishCount),
+    desc: `发布转化 ${formatPercent(calculateRateValue(sevenDayTotals.value.publishCount, sevenDayTotals.value.successMusicCount))}`,
+  },
+  {
+    label: "7 日封面",
+    value: formatCount(sevenDayTotals.value.coverTaskCount),
+    desc: `日均 ${formatCount(calculateAverage(sevenDayTotals.value.coverTaskCount, trendList.value.length))} 次`,
+  },
+]);
+
+const contentTrendDays = computed(() => {
+  const metricMaxMap = trendLegend.reduce((acc, item) => {
+    acc[item.key] = Math.max(
+      1,
+      ...trendList.value.map((trend) => Number(trend[item.key] || 0))
+    );
+    return acc;
+  }, {});
+  return trendList.value.map((item) => ({
+    trendDate: item.trendDate,
+    dateLabel: formatDateLabel(item.trendDate),
+    weekdayLabel: formatWeekday(item.trendDate),
+    newUserCount: Number(item.newUserCount || 0),
+    metrics: trendLegend.map((metric) => ({
+      ...metric,
+      value: Number(item[metric.key] || 0),
+      height: calculateScale(item[metric.key], metricMaxMap[metric.key]),
+    })),
+  }));
+});
+
+const opsTrendSummary = computed(() => [
+  {
+    label: "7 日新增用户",
+    value: formatCount(sevenDayTotals.value.newUserCount),
+    desc: `日均 ${formatCount(calculateAverage(sevenDayTotals.value.newUserCount, trendList.value.length))} 人`,
+  },
+  {
+    label: "7 日积分消耗",
+    value: formatCount(sevenDayTotals.value.integralConsume),
+    desc: "含音乐生成、提示词增强和 AI 封面扣减",
+  },
+  {
+    label: "7 日充值金额",
+    value: formatMoney(sevenDayTotals.value.rechargeAmount),
+    desc: "仅统计已支付充值订单",
+  },
+]);
+
+const opsTrendDays = computed(() => {
+  const maxIntegralConsume = Math.max(
+    1,
+    ...trendList.value.map((item) => Number(item.integralConsume || 0))
+  );
+  const maxRechargeAmount = Math.max(
+    1,
+    ...trendList.value.map((item) => Number(item.rechargeAmount || 0))
+  );
+  return trendList.value.map((item) => ({
+    trendDate: item.trendDate,
+    dateLabel: formatDateLabel(item.trendDate),
+    weekdayLabel: formatWeekday(item.trendDate),
+    newUserCount: Number(item.newUserCount || 0),
+    integralConsume: Number(item.integralConsume || 0),
+    rechargeAmount: Number(item.rechargeAmount || 0),
+    integralPercent: calculateScale(item.integralConsume, maxIntegralConsume),
+    rechargePercent: calculateScale(item.rechargeAmount, maxRechargeAmount),
+  }));
+});
+
+const dashboardNotes = computed(() => [
+  {
+    label: "统计口径",
+    desc: "总览为实时聚合；近 7 日趋势按自然日统计，不依赖日汇总表。",
+  },
+  {
+    label: "公开范围",
+    desc: "热门作品和热门创作者仅统计“生成成功 + 已发布”的公开作品。",
+  },
+  {
+    label: "积分范围",
+    desc: "积分消耗包含音乐生成、提示词增强和 AI 封面三类扣减。",
+  },
+  {
+    label: "展示顺序",
+    desc: "建议答辩时先讲主链路闭环，再看趋势、来源结构和排行榜。",
+  },
+]);
+
 const topModels = computed(() => dashboardData.value.topModels || []);
 const hotMusics = computed(() => dashboardData.value.hotMusics || []);
 const hotCreators = computed(() => dashboardData.value.hotCreators || []);
@@ -400,6 +628,7 @@ const loadDashboard = async () => {
     return;
   }
   dashboardData.value = Object.assign(createEmptyDashboard(), result.data || {});
+  lastLoadedAt.value = formatDateTime(new Date());
 };
 
 const buildDistribution = (items, total) => {
@@ -412,9 +641,40 @@ const buildDistribution = (items, total) => {
 
 const formatCount = (value) => Number(value || 0).toLocaleString("zh-CN");
 
+const formatCompactCount = (value) => {
+  const count = Number(value || 0);
+  if (count >= 10000) {
+    return `${(count / 10000).toFixed(count % 10000 === 0 ? 0 : 1)}w`;
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(count % 1000 === 0 ? 0 : 1)}k`;
+  }
+  return `${count}`;
+};
+
 const formatMoney = (value) => `¥${Number(value || 0).toFixed(2)}`;
 
 const formatPercent = (value) => `${Number(value || 0).toFixed(1)}%`;
+
+const formatDeltaCount = (todayValue, currentValue, previousValue) => {
+  const safeToday = Number(todayValue ?? currentValue ?? 0);
+  const safePrevious = Number(previousValue || 0);
+  const delta = safeToday - safePrevious;
+  if (delta === 0) {
+    return "较昨日持平";
+  }
+  return `较昨日 ${delta > 0 ? "+" : ""}${formatCount(delta)}`;
+};
+
+const formatDeltaMoney = (todayValue, currentValue, previousValue) => {
+  const safeToday = Number(todayValue ?? currentValue ?? 0);
+  const safePrevious = Number(previousValue || 0);
+  const delta = safeToday - safePrevious;
+  if (delta === 0) {
+    return "较昨日持平";
+  }
+  return `较昨日 ${delta > 0 ? "+" : "-"}¥${Math.abs(delta).toFixed(2)}`;
+};
 
 const safePercent = (value) => {
   const percent = Number(value || 0);
@@ -425,6 +685,62 @@ const safePercent = (value) => {
     return 100;
   }
   return percent;
+};
+
+const sumTrendField = (field) =>
+  trendList.value.reduce((sum, item) => sum + Number(item[field] || 0), 0);
+
+const calculateAverage = (total, count) => {
+  if (!count) {
+    return 0;
+  }
+  return Number((Number(total || 0) / count).toFixed(1));
+};
+
+const calculateRateValue = (successCount, totalCount) => {
+  const total = Number(totalCount || 0);
+  if (!total) {
+    return 0;
+  }
+  return Number(((Number(successCount || 0) * 100) / total).toFixed(1));
+};
+
+const calculateScale = (value, maxValue) => {
+  const safeMax = Number(maxValue || 0);
+  if (!safeMax) {
+    return 0;
+  }
+  const percent = Number(((Number(value || 0) / safeMax) * 100).toFixed(1));
+  if (percent <= 0) {
+    return 6;
+  }
+  return Math.max(12, Math.min(100, percent));
+};
+
+const formatDateLabel = (value) => {
+  if (!value || value.length < 10) {
+    return "--";
+  }
+  return value.slice(5).replace("-", "/");
+};
+
+const formatWeekday = (value) => {
+  if (!value) {
+    return "--";
+  }
+  const date = new Date(`${value}T00:00:00`);
+  const weekMap = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  const weekIndex = date.getDay();
+  return Number.isNaN(weekIndex) ? "--" : weekMap[weekIndex];
+};
+
+const formatDateTime = (date) => {
+  const target = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(target.getTime())) {
+    return "";
+  }
+  const pad = (value) => `${value}`.padStart(2, "0");
+  return `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())} ${pad(target.getHours())}:${pad(target.getMinutes())}:${pad(target.getSeconds())}`;
 };
 
 onMounted(() => {
@@ -560,6 +876,10 @@ onMounted(() => {
   grid-column: span 7;
 }
 
+.panel-span-8 {
+  grid-column: span 8;
+}
+
 .panel-span-6 {
   grid-column: span 6;
 }
@@ -601,6 +921,241 @@ onMounted(() => {
   border-radius: 16px;
   background: #f8fbff;
   border: 1px solid #edf2fb;
+}
+
+.trend-overview,
+.ops-summary {
+  display: grid;
+  gap: 12px;
+}
+
+.trend-overview {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ops-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.trend-total-card,
+.ops-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fbff;
+  border: 1px solid #edf2fb;
+
+  span {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  strong {
+    font-size: 24px;
+    color: #0f172a;
+  }
+
+  small {
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+}
+
+.trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: #64748b;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+}
+
+.trend-columns {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trend-day {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 10px;
+  border-radius: 16px;
+  background: #f8fbff;
+  border: 1px solid #edf2fb;
+}
+
+.trend-bars {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  min-height: 180px;
+}
+
+.trend-bar-group {
+  display: flex;
+  min-height: 180px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+
+  em {
+    font-size: 11px;
+    font-style: normal;
+    color: #475569;
+  }
+}
+
+.trend-bar {
+  width: 100%;
+  min-height: 12px;
+  border-radius: 999px 999px 8px 8px;
+  box-shadow: inset 0 -2px 0 rgba(15, 23, 42, 0.08);
+}
+
+.trend-day-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  text-align: center;
+
+  strong {
+    font-size: 14px;
+    color: #0f172a;
+  }
+
+  span,
+  small {
+    color: #64748b;
+  }
+
+  small {
+    font-size: 12px;
+  }
+}
+
+.ops-trend-list,
+.dashboard-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ops-trend-row,
+.note-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8fbff;
+  border: 1px solid #edf2fb;
+}
+
+.ops-trend-date {
+  display: flex;
+  min-width: 68px;
+  flex-direction: column;
+  gap: 4px;
+
+  strong {
+    font-size: 15px;
+    color: #0f172a;
+  }
+
+  span {
+    font-size: 12px;
+    color: #64748b;
+  }
+}
+
+.ops-trend-lines {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ops-trend-line {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ops-line-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: #475569;
+
+  strong {
+    font-size: 12px;
+    color: #0f172a;
+  }
+}
+
+.ops-line-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbeafe;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+  }
+}
+
+.ops-line-bar.is-accent {
+  background: #d1fae5;
+
+  span {
+    background: linear-gradient(90deg, #14b8a6 0%, #34d399 100%);
+  }
+}
+
+.ops-trend-side {
+  min-width: 54px;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: right;
+  color: #475569;
+}
+
+.note-item {
+  flex-direction: column;
+
+  strong {
+    font-size: 13px;
+    color: #0f172a;
+  }
+
+  span {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #64748b;
+  }
 }
 
 .metric-value {
@@ -780,6 +1335,7 @@ onMounted(() => {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .panel-span-8,
   .panel-span-7,
   .panel-span-6,
   .panel-span-5,
@@ -787,8 +1343,14 @@ onMounted(() => {
     grid-column: span 6;
   }
 
-  .metric-grid {
+  .metric-grid,
+  .trend-overview,
+  .ops-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trend-columns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -810,15 +1372,33 @@ onMounted(() => {
   .dashboard-grid,
   .source-grid,
   .metric-grid,
-  .stat-pills {
+  .stat-pills,
+  .trend-overview,
+  .ops-summary,
+  .trend-columns {
     grid-template-columns: 1fr;
   }
 
+  .panel-span-8,
   .panel-span-7,
   .panel-span-6,
   .panel-span-5,
   .panel-span-4 {
     grid-column: span 12;
+  }
+
+  .trend-bars,
+  .trend-bar-group {
+    min-height: 140px;
+  }
+
+  .ops-trend-row {
+    flex-direction: column;
+  }
+
+  .ops-trend-side {
+    min-width: auto;
+    text-align: left;
   }
 }
 </style>

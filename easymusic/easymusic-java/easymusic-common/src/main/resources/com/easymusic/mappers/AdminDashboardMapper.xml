@@ -36,6 +36,17 @@
         <result column="success_count" property="successCount"/>
     </resultMap>
 
+    <resultMap id="trend_result_map" type="com.easymusic.entity.vo.AdminDashboardTrendVO">
+        <result column="trend_date" property="trendDate"/>
+        <result column="new_user_count" property="newUserCount"/>
+        <result column="creation_count" property="creationCount"/>
+        <result column="success_music_count" property="successMusicCount"/>
+        <result column="publish_count" property="publishCount"/>
+        <result column="cover_task_count" property="coverTaskCount"/>
+        <result column="integral_consume" property="integralConsume"/>
+        <result column="recharge_amount" property="rechargeAmount"/>
+    </resultMap>
+
     <resultMap id="hot_music_result_map" type="com.easymusic.entity.vo.AdminDashboardMusicVO">
         <result column="music_id" property="musicId"/>
         <result column="music_title" property="musicTitle"/>
@@ -88,6 +99,35 @@
          from pay_order_info
          where status = 1
            and date(pay_time) = curdate()) as today_recharge_amount
+    </select>
+
+    <select id="selectLast7DaysTrend" resultMap="trend_result_map">
+        select
+        date_format(d.stat_day, '%Y-%m-%d') as trend_date,
+        (select count(1) from user_info u where date(u.create_time) = d.stat_day) as new_user_count,
+        (select count(1) from music_creation c where date(c.create_time) = d.stat_day) as creation_count,
+        (select count(1) from music_info m where date(m.create_time) = d.stat_day and m.music_status = 1) as success_music_count,
+        (select count(1) from music_info m where date(m.publish_time) = d.stat_day and m.publish_status = 1) as publish_count,
+        (select count(1) from music_cover_creation mc where date(mc.create_time) = d.stat_day) as cover_task_count,
+        (select cast(abs(ifnull(sum(change_integral), 0)) as signed)
+         from user_integral_record
+         where change_integral &lt; 0
+           and record_type in (1, 5, 7)
+           and date(create_time) = d.stat_day) as integral_consume,
+        (select cast(ifnull(sum(amount), 0) as decimal(12, 2))
+         from pay_order_info
+         where status = 1
+           and date(pay_time) = d.stat_day) as recharge_amount
+        from (
+        select date_sub(curdate(), interval 6 day) as stat_day
+        union all select date_sub(curdate(), interval 5 day)
+        union all select date_sub(curdate(), interval 4 day)
+        union all select date_sub(curdate(), interval 3 day)
+        union all select date_sub(curdate(), interval 2 day)
+        union all select date_sub(curdate(), interval 1 day)
+        union all select curdate()
+        ) d
+        order by d.stat_day asc
     </select>
 
     <select id="selectTopModels" resultMap="top_model_result_map">

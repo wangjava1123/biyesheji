@@ -2,6 +2,7 @@ package com.easymusic.service.impl;
 
 import com.easymusic.entity.vo.AdminDashboardCreatorVO;
 import com.easymusic.entity.vo.AdminDashboardModelVO;
+import com.easymusic.entity.vo.AdminDashboardTrendVO;
 import com.easymusic.entity.vo.AdminDashboardVO;
 import com.easymusic.mappers.AdminDashboardMapper;
 import com.easymusic.service.AdminDashboardService;
@@ -34,6 +35,11 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         fillDefaultValues(dashboard);
         dashboard.setMusicSuccessRate(calculateRate(dashboard.getSuccessMusicCount(), dashboard.getTotalMusicCount()));
         dashboard.setCoverSuccessRate(calculateRate(dashboard.getSuccessCoverTaskCount(), dashboard.getTotalCoverTaskCount()));
+        List<AdminDashboardTrendVO> last7DaysTrend = defaultList(adminDashboardMapper.selectLast7DaysTrend());
+        for (AdminDashboardTrendVO trend : last7DaysTrend) {
+            fillTrendDefaultValues(trend);
+        }
+        dashboard.setLast7DaysTrend(last7DaysTrend);
 
         List<AdminDashboardModelVO> topModels = adminDashboardMapper.selectTopModels(MODEL_LIMIT);
         if (topModels == null) {
@@ -81,6 +87,16 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         dashboard.setManualCoverMusicCount(defaultZero(dashboard.getManualCoverMusicCount()));
         dashboard.setTodayIntegralConsume(defaultZero(dashboard.getTodayIntegralConsume()));
         dashboard.setTodayRechargeAmount(defaultDecimal(dashboard.getTodayRechargeAmount()));
+    }
+
+    private void fillTrendDefaultValues(AdminDashboardTrendVO trend) {
+        trend.setNewUserCount(defaultZero(trend.getNewUserCount()));
+        trend.setCreationCount(defaultZero(trend.getCreationCount()));
+        trend.setSuccessMusicCount(defaultZero(trend.getSuccessMusicCount()));
+        trend.setPublishCount(defaultZero(trend.getPublishCount()));
+        trend.setCoverTaskCount(defaultZero(trend.getCoverTaskCount()));
+        trend.setIntegralConsume(defaultZero(trend.getIntegralConsume()));
+        trend.setRechargeAmount(defaultDecimal(trend.getRechargeAmount()));
     }
 
     private int defaultZero(Integer value) {
