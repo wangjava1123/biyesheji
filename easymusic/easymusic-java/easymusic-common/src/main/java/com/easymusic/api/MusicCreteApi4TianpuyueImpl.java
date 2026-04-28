@@ -5,8 +5,10 @@ import com.alibaba.fastjson2.JSONPath;
 import com.easymusic.entity.config.AppConfig;
 import com.easymusic.entity.dto.MusicCreationResultDTO;
 import com.easymusic.entity.enums.MusicTypeEnum;
+import com.easymusic.exception.BusinessException;
 import com.easymusic.utils.JsonUtils;
 import com.easymusic.utils.OKHttpUtils;
+import com.easymusic.utils.StringTools;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -54,6 +56,7 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
 
     @Override
     public List<String> createMusic(String model, String prompt, String lyrics) {
+        validateCreateConfig();
         Map<String, String> header = getHeader();
         Map<String, Object> params = new HashMap<>();
         params.put("prompt", prompt);
@@ -62,8 +65,7 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
         params.put("callback_url", appConfig.getWebDomain() + String.format(CALL_BACL_URL, MusicTypeEnum.MUSIC.getType()));
         String jsonParams = JsonUtils.convertObj2Json(params);
         String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_CREATE_MUSIC, header, jsonParams);
-        List<String> itemList = (List<String>) JSONPath.eval(response, "$.data.item_ids");
-        return itemList;
+        return extractItemIds(response, "音乐创作");
     }
 
     @Override
@@ -107,6 +109,7 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
 
     @Override
     public List<String> createPureMusic(String model, String prompt) {
+        validateCreateConfig();
         Map<String, String> header = getHeader();
         Map<String, Object> params = new HashMap<>();
         params.put("prompt", prompt);
@@ -114,8 +117,7 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
         params.put("callback_url", appConfig.getWebDomain() + String.format(CALL_BACL_URL, MusicTypeEnum.PURE.getType()));
         String jsonParams = JsonUtils.convertObj2Json(params);
         String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_CREATE_PURE_MUSIC, header, jsonParams);
-        List<String> itemList = (List<String>) JSONPath.eval(response, "$.data.item_ids");
-        return itemList;
+        return extractItemIds(response, "纯音乐创作");
     }
 
     @Override
@@ -141,5 +143,35 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
             return getMusicResultDTO((Integer) JSONPath.eval(responseBody, "$.status"), jsonObject, musicTypeEnum);
         }
         return null;
+    }
+
+    private void validateCreateConfig() {
+        if (StringTools.isEmpty(appConfig.getTianpuyueApiKey())) {
+            throw new BusinessException("未配置天普乐音乐接口 Key，请先设置 TIANPUYUE_API_KEY");
+        }
+        String courseOrderId = appConfig.getTianpuyueApiCourseOrderId();
+        if (StringTools.isEmpty(courseOrderId) || "12312".equals(courseOrderId.trim())) {
+            throw new BusinessException("未配置有效的天普乐课程订单号，请检查 tianpuyue.api.courseOrderId");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> extractItemIds(String response, String bizName) {
+        Integer status = (Integer) JSONPath.eval(response, "$.status");
+        String message = (String) JSONPath.eval(response, "$.message");
+        if (status != null && !STATUS_SUCCESS.equals(status)) {
+            if (StringTools.isEmpty(message)) {
+                throw new BusinessException(bizName + "接口调用失败");
+            }
+            throw new BusinessException(bizName + "接口调用失败：" + message);
+        }
+        List<String> itemList = (List<String>) JSONPath.eval(response, "$.data.item_ids");
+        if (itemList == null || itemList.isEmpty()) {
+            if (StringTools.isEmpty(message)) {
+                throw new BusinessException(bizName + "接口未返回任务ID");
+            }
+            throw new BusinessException(bizName + "接口未返回任务ID：" + message);
+        }
+        return itemList;
     }
 }
