@@ -36,6 +36,9 @@ CREATE TABLE `music_creation` (
   `creation_id` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '创作ID',
   `user_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '用户ID',
   `prompt` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '提示词',
+  `origin_prompt` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '原始提示词',
+  `prompt_source_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '提示词来源 0:手填 1:AI增强',
+  `prompt_record_id` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '提示词增强记录ID',
   `lyrics` varchar(1500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '歌词',
   `model` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '模型',
   `music_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '音乐类型 0:音乐 1:纯音乐',
@@ -52,8 +55,45 @@ CREATE TABLE `music_creation` (
 
 LOCK TABLES `music_creation` WRITE;
 /*!40000 ALTER TABLE `music_creation` DISABLE KEYS */;
-INSERT INTO `music_creation` VALUES ('g9CNRbBcSerZ3lC','983332031840','写一首甜蜜浪漫的情人节情歌',NULL,'V3',0,0,'{\"musicEmotion\":null,\"musicGener\":null,\"musicSex\":null}','2026-03-06 20:50:53');
+INSERT INTO `music_creation` VALUES ('g9CNRbBcSerZ3lC','983332031840','写一首甜蜜浪漫的情人节情歌',NULL,0,NULL,NULL,'V3',0,0,'{\"musicEmotion\":null,\"musicGener\":null,\"musicSex\":null}','2026-03-06 20:50:53');
 /*!40000 ALTER TABLE `music_creation` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `prompt_optimize_record`
+--
+
+DROP TABLE IF EXISTS `prompt_optimize_record`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `prompt_optimize_record` (
+  `record_id` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '记录ID',
+  `user_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '用户ID',
+  `biz_type` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '业务类型',
+  `raw_prompt` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '原始提示词',
+  `optimized_prompt` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci COMMENT '优化后的音乐提示词',
+  `structured_result` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci COMMENT '结构化结果JSON',
+  `music_id` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '关联作品ID',
+  `provider` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '供应商标识',
+  `model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '模型标识',
+  `integral` int DEFAULT '0' COMMENT '积分消耗',
+  `status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '状态 1:成功 2:失败',
+  `fail_reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '失败原因',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `finish_time` datetime DEFAULT NULL COMMENT '完成时间',
+  PRIMARY KEY (`record_id`) USING BTREE,
+  KEY `idx_user_id` (`user_id`) USING BTREE,
+  KEY `idx_music_id` (`music_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC COMMENT='提示词增强记录';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `prompt_optimize_record`
+--
+
+LOCK TABLES `prompt_optimize_record` WRITE;
+/*!40000 ALTER TABLE `prompt_optimize_record` DISABLE KEYS */;
+/*!40000 ALTER TABLE `prompt_optimize_record` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --

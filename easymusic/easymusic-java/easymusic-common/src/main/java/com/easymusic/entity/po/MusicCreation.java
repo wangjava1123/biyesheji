@@ -32,6 +32,21 @@ public class MusicCreation implements Serializable {
 	private String prompt;
 
 	/**
+	 * 原始提示词
+	 */
+	private String originPrompt;
+
+	/**
+	 * 提示词来源 0:手填 1:AI增强
+	 */
+	private Integer promptSourceType;
+
+	/**
+	 * 提示词增强记录ID
+	 */
+	private String promptRecordId;
+
+	/**
 	 * 歌词
 	 */
 	private String lyrics;
@@ -88,6 +103,30 @@ public class MusicCreation implements Serializable {
 		return this.prompt;
 	}
 
+	public void setOriginPrompt(String originPrompt){
+		this.originPrompt = originPrompt;
+	}
+
+	public String getOriginPrompt(){
+		return this.originPrompt;
+	}
+
+	public void setPromptSourceType(Integer promptSourceType){
+		this.promptSourceType = promptSourceType;
+	}
+
+	public Integer getPromptSourceType(){
+		return this.promptSourceType;
+	}
+
+	public void setPromptRecordId(String promptRecordId){
+		this.promptRecordId = promptRecordId;
+	}
+
+	public String getPromptRecordId(){
+		return this.promptRecordId;
+	}
+
 	public void setLyrics(String lyrics){
 		this.lyrics = lyrics;
 	}
@@ -138,6 +177,6 @@ public class MusicCreation implements Serializable {
 
 	@Override
 	public String toString (){
-		return "创作ID:"+(creationId == null ? "空" : creationId)+"，用户ID:"+(userId == null ? "空" : userId)+"，提示词:"+(prompt == null ? "空" : prompt)+"，歌词:"+(lyrics == null ? "空" : lyrics)+"，模型:"+(model == null ? "空" : model)+"，音乐类型 0:音乐 1:纯音乐:"+(musicType == null ? "空" : musicType)+"，模式 0:简单模式 1:专家模式:"+(modeType == null ? "空" : modeType)+"，设置信息:"+(settings == null ? "空" : settings)+"，创建时间:"+(createTime == null ? "空" : DateUtil.format(createTime, DateTimePatternEnum.YYYY_MM_DD_HH_MM_SS.getPattern()));
+		return "创作ID:"+(creationId == null ? "空" : creationId)+"，用户ID:"+(userId == null ? "空" : userId)+"，提示词:"+(prompt == null ? "空" : prompt)+"，原始提示词:"+(originPrompt == null ? "空" : originPrompt)+"，提示词来源 0:手填 1:AI增强:"+(promptSourceType == null ? "空" : promptSourceType)+"，提示词增强记录ID:"+(promptRecordId == null ? "空" : promptRecordId)+"，歌词:"+(lyrics == null ? "空" : lyrics)+"，模型:"+(model == null ? "空" : model)+"，音乐类型 0:音乐 1:纯音乐:"+(musicType == null ? "空" : musicType)+"，模式 0:简单模式 1:专家模式:"+(modeType == null ? "空" : modeType)+"，设置信息:"+(settings == null ? "空" : settings)+"，创建时间:"+(createTime == null ? "空" : DateUtil.format(createTime, DateTimePatternEnum.YYYY_MM_DD_HH_MM_SS.getPattern()));
 	}
 }

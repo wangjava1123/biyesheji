@@ -11,6 +11,12 @@
 		<result column="user_id" property="userId"  />
 		<!--提示词-->
 		<result column="prompt" property="prompt"  />
+		<!--原始提示词-->
+		<result column="origin_prompt" property="originPrompt"  />
+		<!--提示词来源 0:手填 1:AI增强-->
+		<result column="prompt_source_type" property="promptSourceType"  />
+		<!--提示词增强记录ID-->
+		<result column="prompt_record_id" property="promptRecordId"  />
 		<!--歌词-->
 		<result column="lyrics" property="lyrics"  />
 		<!--模型-->
@@ -28,7 +34,7 @@
 
 	<!-- 通用查询结果列-->
 	<sql id="base_column_list">
-		 m.creation_id,m.user_id,m.prompt,m.lyrics,m.model,
+		 m.creation_id,m.user_id,m.prompt,m.origin_prompt,m.prompt_source_type,m.prompt_record_id,m.lyrics,m.model,
 		 m.music_type,m.mode_type,m.settings,m.create_time
 	</sql>
 
@@ -122,6 +128,15 @@
 			<if test="bean.prompt != null">
 				 prompt,
 			</if>
+			<if test="bean.originPrompt != null">
+				 origin_prompt,
+			</if>
+			<if test="bean.promptSourceType != null">
+				 prompt_source_type,
+			</if>
+			<if test="bean.promptRecordId != null">
+				 prompt_record_id,
+			</if>
 			<if test="bean.lyrics != null">
 				 lyrics,
 			</if>
@@ -150,6 +165,15 @@
 			</if>
 			<if test="bean.prompt!=null">
 				 #{bean.prompt},
+			</if>
+			<if test="bean.originPrompt!=null">
+				 #{bean.originPrompt},
+			</if>
+			<if test="bean.promptSourceType!=null">
+				 #{bean.promptSourceType},
+			</if>
+			<if test="bean.promptRecordId!=null">
+				 #{bean.promptRecordId},
 			</if>
 			<if test="bean.lyrics!=null">
 				 #{bean.lyrics},
@@ -185,6 +209,15 @@
 			<if test="bean.prompt != null">
 				 prompt,
 			</if>
+			<if test="bean.originPrompt != null">
+				 origin_prompt,
+			</if>
+			<if test="bean.promptSourceType != null">
+				 prompt_source_type,
+			</if>
+			<if test="bean.promptRecordId != null">
+				 prompt_record_id,
+			</if>
 			<if test="bean.lyrics != null">
 				 lyrics,
 			</if>
@@ -213,6 +246,15 @@
 			</if>
 			<if test="bean.prompt!=null">
 				 #{bean.prompt},
+			</if>
+			<if test="bean.originPrompt!=null">
+				 #{bean.originPrompt},
+			</if>
+			<if test="bean.promptSourceType!=null">
+				 #{bean.promptSourceType},
+			</if>
+			<if test="bean.promptRecordId!=null">
+				 #{bean.promptRecordId},
 			</if>
 			<if test="bean.lyrics!=null">
 				 #{bean.lyrics},
@@ -244,6 +286,15 @@
 			<if test="bean.prompt!=null">
 				 prompt = VALUES(prompt),
 			</if>
+			<if test="bean.originPrompt!=null">
+				 origin_prompt = VALUES(origin_prompt),
+			</if>
+			<if test="bean.promptSourceType!=null">
+				 prompt_source_type = VALUES(prompt_source_type),
+			</if>
+			<if test="bean.promptRecordId!=null">
+				 prompt_record_id = VALUES(prompt_record_id),
+			</if>
 			<if test="bean.lyrics!=null">
 				 lyrics = VALUES(lyrics),
 			</if>
@@ -271,6 +322,9 @@
 			 creation_id,
 			 user_id,
 			 prompt,
+			 origin_prompt,
+			 prompt_source_type,
+			 prompt_record_id,
 			 lyrics,
 			 model,
 			 music_type,
@@ -283,6 +337,9 @@
 				 #{item.creationId},
 				 #{item.userId},
 				 #{item.prompt},
+				 #{item.originPrompt},
+				 #{item.promptSourceType},
+				 #{item.promptRecordId},
 				 #{item.lyrics},
 				 #{item.model},
 				 #{item.musicType},
@@ -299,6 +356,9 @@
 			 creation_id,
 			 user_id,
 			 prompt,
+			 origin_prompt,
+			 prompt_source_type,
+			 prompt_record_id,
 			 lyrics,
 			 model,
 			 music_type,
@@ -311,6 +371,9 @@
 				 #{item.creationId},
 				 #{item.userId},
 				 #{item.prompt},
+				 #{item.originPrompt},
+				 #{item.promptSourceType},
+				 #{item.promptRecordId},
 				 #{item.lyrics},
 				 #{item.model},
 				 #{item.musicType},
@@ -323,6 +386,9 @@
 			creation_id = VALUES(creation_id),
 			user_id = VALUES(user_id),
 			prompt = VALUES(prompt),
+			origin_prompt = VALUES(origin_prompt),
+			prompt_source_type = VALUES(prompt_source_type),
+			prompt_record_id = VALUES(prompt_record_id),
 			lyrics = VALUES(lyrics),
 			model = VALUES(model),
 			music_type = VALUES(music_type),
@@ -343,6 +409,15 @@
 			</if>
 			<if test="bean.prompt != null">
 				 prompt = #{bean.prompt},
+			</if>
+			<if test="bean.originPrompt != null">
+				 origin_prompt = #{bean.originPrompt},
+			</if>
+			<if test="bean.promptSourceType != null">
+				 prompt_source_type = #{bean.promptSourceType},
+			</if>
+			<if test="bean.promptRecordId != null">
+				 prompt_record_id = #{bean.promptRecordId},
 			</if>
 			<if test="bean.lyrics != null">
 				 lyrics = #{bean.lyrics},
@@ -381,6 +456,15 @@
 			</if>
 			<if test="bean.prompt != null">
 				 prompt = #{bean.prompt},
+			</if>
+			<if test="bean.originPrompt != null">
+				 origin_prompt = #{bean.originPrompt},
+			</if>
+			<if test="bean.promptSourceType != null">
+				 prompt_source_type = #{bean.promptSourceType},
+			</if>
+			<if test="bean.promptRecordId != null">
+				 prompt_record_id = #{bean.promptRecordId},
 			</if>
 			<if test="bean.lyrics != null">
 				 lyrics = #{bean.lyrics},

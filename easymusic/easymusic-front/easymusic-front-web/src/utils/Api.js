@@ -13,6 +13,7 @@ const Api = {
     updatePlayCount: "/music/updatePlayCount",//更新播放数
     getCreation: "/music/getCreation",//做同款
     musicDetail: "/music/musicDetail",//音乐详情
+    promptAssistGenerate: "/promptAssist/generate",//提示词增强
     loadSysDict: "/my/loadSysDict",//获取系统字典
     createMusic: "/my/createMusic",//创作音乐
     loadMyMusic: "/my/loadMyMusic",//获取我的音乐

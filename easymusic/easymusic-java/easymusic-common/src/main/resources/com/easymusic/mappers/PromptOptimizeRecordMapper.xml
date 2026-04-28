@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easymusic.mappers.PromptOptimizeRecordMapper">
+
+    <resultMap id="base_result_map" type="com.easymusic.entity.po.PromptOptimizeRecord">
+        <result column="record_id" property="recordId"/>
+        <result column="user_id" property="userId"/>
+        <result column="biz_type" property="bizType"/>
+        <result column="raw_prompt" property="rawPrompt"/>
+        <result column="optimized_prompt" property="optimizedPrompt"/>
+        <result column="structured_result" property="structuredResult"/>
+        <result column="music_id" property="musicId"/>
+        <result column="provider" property="provider"/>
+        <result column="model" property="model"/>
+        <result column="integral" property="integral"/>
+        <result column="status" property="status"/>
+        <result column="fail_reason" property="failReason"/>
+        <result column="create_time" property="createTime"/>
+        <result column="finish_time" property="finishTime"/>
+    </resultMap>
+
+    <sql id="base_column_list">
+        p.record_id,p.user_id,p.biz_type,p.raw_prompt,p.optimized_prompt,p.structured_result,
+        p.music_id,p.provider,p.model,p.integral,p.status,p.fail_reason,p.create_time,p.finish_time
+    </sql>
+
+    <insert id="insert" parameterType="com.easymusic.entity.po.PromptOptimizeRecord">
+        INSERT INTO prompt_optimize_record(
+            record_id,
+            user_id,
+            biz_type,
+            raw_prompt,
+            optimized_prompt,
+            structured_result,
+            music_id,
+            provider,
+            model,
+            integral,
+            status,
+            fail_reason,
+            create_time,
+            finish_time
+        ) VALUES (
+            #{bean.recordId},
+            #{bean.userId},
+            #{bean.bizType},
+            #{bean.rawPrompt},
+            #{bean.optimizedPrompt},
+            #{bean.structuredResult},
+            #{bean.musicId},
+            #{bean.provider},
+            #{bean.model},
+            #{bean.integral},
+            #{bean.status},
+            #{bean.failReason},
+            #{bean.createTime},
+            #{bean.finishTime}
+        )
+    </insert>
+
+    <select id="selectByRecordId" resultMap="base_result_map">
+        SELECT <include refid="base_column_list"/>
+        FROM prompt_optimize_record p
+        WHERE p.record_id = #{recordId}
+    </select>
+
+</mapper>

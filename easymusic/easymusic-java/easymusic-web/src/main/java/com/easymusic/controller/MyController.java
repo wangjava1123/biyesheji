@@ -13,6 +13,7 @@ import com.easymusic.service.MusicCreationService;
 import com.easymusic.service.MusicInfoService;
 import com.easymusic.service.SysDictService;
 import com.easymusic.service.UserIntegralRecordService;
+import com.easymusic.utils.StringTools;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -51,6 +52,9 @@ public class MyController extends ABaseController {
     @RequestMapping("/createMusic")
     @GlobalInterceptor(checkLogin = true)
     public ResponseVO createMusic(@NotEmpty @Size(max = 500) String prompt,
+                                  @Size(max = 500) String originPrompt,
+                                  @Size(max = 15) String promptRecordId,
+                                  Integer promptSourceType,
                                   @Size(max = 1500) String lyrics,
                                   @NotNull Integer musicType,
                                   @NotEmpty String model,
@@ -64,6 +68,9 @@ public class MyController extends ABaseController {
         creation.setMusicType(musicType);
         creation.setLyrics(lyrics);
         creation.setPrompt(prompt);
+        creation.setOriginPrompt(StringTools.isEmpty(originPrompt) ? null : originPrompt.trim());
+        creation.setPromptRecordId(StringTools.isEmpty(promptRecordId) ? null : promptRecordId.trim());
+        creation.setPromptSourceType(promptSourceType == null ? 0 : promptSourceType);
         creation.setModel(model);
         creation.setModeType(modeType);
         MusicSettingDTO musicSettingDTO = new MusicSettingDTO();

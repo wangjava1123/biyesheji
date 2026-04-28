@@ -29,6 +29,9 @@ public class AppConfig {
     @Value("${web.domain:}")
     private String webDomain;
 
+    @Value("${ai.config.filePath:}")
+    private String aiConfigFilePath;
+
 
     //微信支付 appid
     @Value("${pay.wechat.appid:}")
@@ -133,6 +136,10 @@ public class AppConfig {
         this.webDomain = webDomain;
     }
 
+    public void setAiConfigFilePath(String aiConfigFilePath) {
+        this.aiConfigFilePath = aiConfigFilePath;
+    }
+
     public String getPayWechatAppId() {
         return payWechatAppId;
     }
@@ -166,6 +173,10 @@ public class AppConfig {
 
     public String getWebDomain() {
         return webDomain;
+    }
+
+    public String getAiConfigFilePath() {
+        return aiConfigFilePath;
     }
 
     public String getAdminAccount() {
