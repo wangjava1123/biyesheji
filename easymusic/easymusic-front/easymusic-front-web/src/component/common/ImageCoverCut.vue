@@ -25,8 +25,12 @@
       >
       </VueCropper>
       <div class="preview-panel">
+        <div class="preview-title">预览</div>
         <div class="preview-image">
           <img :src="previewsImage" />
+        </div>
+        <div class="preview-tip">
+          建议上传至少 {{ props.cutWidth }} × {{ Math.round(props.cutWidth * props.scale) }} 的图片。
         </div>
         <el-upload
           :multiple="false"
@@ -34,16 +38,9 @@
           :http-request="selectFile"
           :accept="proxy.imageAccept"
         >
-          <el-button class="select-btn" type="primary" @click=""
-            >选择图片</el-button
-          >
+          <el-button class="select-btn" type="primary" @click="">选择图片</el-button>
         </el-upload>
       </div>
-    </div>
-    <div class="info">
-      建议上传至少{{ props.cutWidth }}*{{
-        Math.round(props.cutWidth * props.scale)
-      }}的图片
     </div>
   </Dialog>
 </template>
@@ -175,33 +172,71 @@ const cutImage = () => {
 <style lang="scss" scoped>
 .cut-image-panel {
   display: flex;
+  gap: 18px;
   :deep(.vue-cropper) {
     background: #472d87;
   }
   .cropper {
     flex: 1;
     height: 400px;
+    border-radius: 16px;
+    overflow: hidden;
   }
   .preview-panel {
     width: 200px;
-    margin-left: 20px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .preview-title {
+    width: 100%;
+    text-align: left;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .preview-tip {
+    margin-top: 12px;
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: left;
+  }
+  .preview-image {
+    width: 100%;
+    height: 200px;
+    background: #472d87;
+    display: flex;
+    align-items: center;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  img {
+    width: 100%;
+  }
+  .select-btn {
+    margin-top: 16px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .cut-image-panel {
+    flex-direction: column;
     .preview-image {
       width: 100%;
       height: 200px;
-      background: #472d87;
-      display: flex;
-      align-items: center;
+      max-width: 320px;
     }
-    img {
+    .preview-panel {
       width: 100%;
+      align-items: stretch;
+    }
+    .cropper {
+      height: 320px;
     }
   }
-  .select-btn {
-    margin-top: 20px;
-  }
-}
-.info {
-  color: #fff;
 }
 </style>

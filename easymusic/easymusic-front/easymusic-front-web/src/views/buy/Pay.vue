@@ -1,9 +1,13 @@
 <template>
-  <Dialog :show="dialogConfig.show" :title="dialogConfig.title" :buttons="dialogConfig.buttons" width="535px"
+  <Dialog :show="dialogConfig.show" :title="dialogConfig.title" :buttons="dialogConfig.buttons" :width="dialogWidth"
     :showCancel="false" @close="closePay">
     <div class="pay-panel">
       <div class="step-panel">
-        <el-steps :space="200" :active="currentStep" finish-status="success" align-center>
+        <div class="step-copy">
+          <div class="step-title">确认订单并完成积分充值</div>
+          <div class="step-desc">保留扫码支付和支付码两种路径，小屏下帮助说明改为点击查看。</div>
+        </div>
+        <el-steps :space="stepSpace" :active="currentStep" finish-status="success" align-center>
           <el-step title="确认订单" />
           <el-step title="扫码支付" />
           <el-step title="购买成功" />
@@ -12,7 +16,7 @@
 
       <template v-if="currentStep == 1">
         <div class="product-info-panel">
-          <div class="title-info">订单详情信息</div>
+          <div class="title-info">订单详情</div>
           <div class="product-info">
             <div class="product-cover">
               <Cover :cover="productInfo.cover" :width="100"></Cover>
@@ -33,7 +37,7 @@
                 <el-radio :value="1">微信支付(推荐)</el-radio>
                 <el-radio :value="0">支付码支付</el-radio>
               </el-radio-group>
-              <el-popover placement="right" :width="220" trigger="hover">
+              <el-popover placement="right" :width="220" :trigger="helpPopoverTrigger">
                 <template #reference>
                   <div class="no-pay-tips">没有微信支付?</div>
                 </template>
@@ -116,7 +120,7 @@
 
 <script setup>
 import QrcodeVue from 'qrcode.vue'
-import { ref, reactive, getCurrentInstance, nextTick } from 'vue'
+import { ref, reactive, getCurrentInstance, nextTick, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -128,6 +132,15 @@ const userInfoStore = useUserInfoStore()
 const dialogConfig = ref({
   show: false,
   title: '购买',
+})
+const dialogWidth = computed(() => {
+  return window.innerWidth > 680 ? '535px' : '92%'
+})
+const stepSpace = computed(() => {
+  return window.innerWidth > 680 ? 160 : 90
+})
+const helpPopoverTrigger = computed(() => {
+  return window.innerWidth > 720 ? 'hover' : 'click'
 })
 const currentStep = ref(1)
 
@@ -300,48 +313,74 @@ defineExpose({
 .pay-panel {
   color: #fff;
   .step-panel {
-    margin-bottom: 5px;
+    margin-bottom: 12px;
+    .step-copy {
+      margin-bottom: 18px;
+    }
+    .step-title {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.35;
+      text-align: center;
+    }
+    .step-desc {
+      margin-top: 8px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.64);
+      line-height: 1.65;
+    }
     :deep(.el-step__title.is-process) {
       color: #fff;
     }
+    :deep(.el-step__title) {
+      font-size: 13px;
+    }
   }
   .product-info-panel {
-    border: 1px solid var(--text);
-    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
     .title-info {
-      padding: 10px;
-      background: var(--activeText);
+      padding: 12px 14px;
+      background: rgba(255, 123, 84, 0.18);
+      color: #ffd4bc;
+      font-weight: 600;
     }
     .product-info {
       display: flex;
       align-items: center;
-      padding: 10px;
+      gap: 14px;
+      padding: 16px;
       .product-cover {
-        border-radius: 5px;
+        border-radius: 12px;
         overflow: hidden;
       }
       .product-name-panel {
-        margin: 0px 10px;
         flex: 1;
         width: 0;
         .product-name {
-          font-weight: bold;
+          font-size: 18px;
+          line-height: 1.35;
+          font-weight: 700;
         }
         .sku-name {
-          margin-top: 5px;
+          margin-top: 8px;
           font-size: 13px;
+          color: rgba(255, 255, 255, 0.68);
         }
       }
       .price {
-        color: #f36106;
+        color: #ffd36d;
+        font-weight: 700;
         span {
-          font-size: 20px;
+          font-size: 28px;
         }
       }
     }
   }
   .pay-form {
+    margin-top: 16px;
     :deep(.el-form-item) {
       align-items: center;
       .el-form-item__label,
@@ -361,45 +400,50 @@ defineExpose({
     }
     .form-item {
       display: flex;
-      align-content: center;
+      align-items: center;
+      width: 100%;
       .input {
         flex: 1;
         margin-right: 10px;
       }
       .input-tips {
-        color: var(--text);
+        color: rgba(255, 255, 255, 0.56);
+        font-size: 12px;
       }
       .check-code {
         cursor: pointer;
-        border-radius: 5px;
+        border-radius: 10px;
       }
     }
     .pay-method {
       width: 100%;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
       .no-pay-tips {
         cursor: pointer;
         font-size: 13px;
-        margin-left: 15px;
-        color: var(--activeText);
+        color: #ffbf98;
       }
     }
   }
   .pay-btn-panel {
-    margin-top: 10px;
+    margin-top: 18px;
     display: flex;
     justify-content: center;
     .pay-btn {
-      width: 150px;
+      min-width: 180px;
       text-align: center;
-      padding: 10px;
+      padding: 12px 18px;
       background: var(--btnBg);
-      border-radius: 20px;
+      box-shadow: var(--btnShadow);
+      border-radius: 999px;
       cursor: pointer;
-      opacity: 0.8;
+      font-weight: 600;
       &:hover {
-        opacity: 1;
+        opacity: 0.92;
       }
     }
   }
@@ -407,26 +451,33 @@ defineExpose({
   .step2 {
     text-align: center;
     .amount-panel {
-      color: #ffd700;
+      color: #ffd36d;
       font-size: 18px;
-      margin-top: 10px;
+      margin-top: 18px;
       .amount {
-        font-size: 25px;
+        font-size: 30px;
+        font-weight: 700;
       }
     }
     .qrcode {
-      margin: 20px auto;
+      margin: 20px auto 10px;
+      padding: 18px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       .pay-remind {
-        margin-top: 5px;
+        margin-top: 12px;
         text-align: center;
-        color: #aab4bf;
+        color: rgba(255, 255, 255, 0.66);
+        line-height: 1.7;
       }
       .pay-info {
-        margin-top: 10px;
+        margin-top: 14px;
         display: flex;
-        display: flex;
+        gap: 14px;
         align-items: center;
         justify-content: center;
+        flex-wrap: wrap;
       }
       .icon-wxpay {
         display: flex;
@@ -441,9 +492,11 @@ defineExpose({
         }
       }
       .have-pay {
-        margin-left: 10px;
         cursor: pointer;
         color: #fff;
+        padding: 8px 16px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
       }
     }
   }
@@ -452,27 +505,78 @@ defineExpose({
     .icon-ok {
       text-align: center;
       color: #22ac38;
-      font-size: 16px;
-      margin: 40px 0px;
+      font-size: 20px;
+      margin: 56px 0px 24px;
     }
     .icon-ok::before {
       margin-right: 10px;
     }
     .go-order-panel {
-      margin: 30px 0px 20px 0px;
+      margin: 20px 0px 20px 0px;
       text-align: center;
       .go-btn {
-        background: #22ac38;
+        background: linear-gradient(90deg, #22ac38, #39c95d);
         color: #fff;
-        line-height: 45px;
+        line-height: 48px;
         text-align: center;
         margin: 0px auto;
         display: inline-block;
         padding: 0px 60px;
         cursor: pointer;
-        border-radius: 20px;
+        border-radius: 999px;
         &:hover {
           opacity: 0.8;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .pay-panel {
+    .step-panel {
+      .step-title {
+        font-size: 18px;
+      }
+    }
+
+    .product-info-panel {
+      .product-info {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+      }
+    }
+
+    .pay-form {
+      .form-item {
+        flex-wrap: wrap;
+        gap: 10px;
+
+        .input {
+          width: 100%;
+          margin-right: 0;
+        }
+      }
+    }
+
+    .pay-btn-panel {
+      .pay-btn {
+        width: 100%;
+      }
+    }
+
+    .step2 {
+      .qrcode {
+        padding: 16px 12px;
+      }
+    }
+
+    .step3 {
+      .go-order-panel {
+        .go-btn {
+          width: 100%;
+          padding: 0;
         }
       }
     }

@@ -3,7 +3,7 @@
     :show="dialogConfig.show"
     :title="dialogConfig.title"
     :buttons="dialogConfig.buttons"
-    width="400px"
+    :width="dialogWidth"
     :showCancel="false"
     @close="dialogConfig.show = false"
   >
@@ -15,12 +15,17 @@
       label-width="0px"
       @submit.prevent
     >
+      <div class="panel-intro">
+        <div class="panel-title">更新个人资料</div>
+        <div class="panel-desc">昵称和头像会同步影响创作者主页、作品卡片和评论展示。</div>
+      </div>
       <div class="avatar-panel">
         <ImageCoverUpload
           v-model="formData.avatar"
           :width="100"
           background="#3A2D87"
         ></ImageCoverUpload>
+        <div class="avatar-tip">建议使用清晰方形头像，便于首页和作者主页展示。</div>
       </div>
       <!--input输入-->
       <div class="uid-info">用户ID：{{ formData.userId }}</div>
@@ -41,7 +46,7 @@
 
 <script setup>
 import ImageCoverUpload from "@/component/common/ImageCoverUpload.vue";
-import { ref, reactive, getCurrentInstance, nextTick } from "vue";
+import { ref, reactive, getCurrentInstance, nextTick, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 const { proxy } = getCurrentInstance();
 const router = useRouter();
@@ -53,6 +58,9 @@ const dialogConfig = ref({
   show: false,
   title: "修改个人信息",
   buttons: [],
+});
+const dialogWidth = computed(() => {
+  return window.innerWidth > 560 ? "420px" : "92%"
 });
 
 const formData = ref({});
@@ -118,25 +126,47 @@ defineExpose({
       color: var(--text);
     }
   }
+  .panel-intro {
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-size: 20px;
+    line-height: 1.35;
+    font-weight: 700;
+    color: #fff;
+  }
+  .panel-desc {
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.68);
+    line-height: 1.7;
+  }
   .avatar-panel {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 10px;
+  }
+  .avatar-tip {
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 12px;
+    text-align: center;
   }
   .uid-info {
     text-align: center;
-    margin: 10px auto;
-    color: var(--text);
+    margin: 12px auto 14px;
+    color: rgba(255, 255, 255, 0.66);
   }
   .save-btn {
     width: 100%;
     cursor: pointer;
-    padding: 8px;
+    padding: 12px;
     text-align: center;
     border-radius: 50px;
     background: var(--btnBg);
+    box-shadow: var(--btnShadow);
     color: #fff;
+    font-weight: 600;
   }
 }
 </style>

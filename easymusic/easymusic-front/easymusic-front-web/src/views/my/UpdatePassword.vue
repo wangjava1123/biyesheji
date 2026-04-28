@@ -3,7 +3,7 @@
     :show="dialogConfig.show"
     :title="dialogConfig.title"
     :buttons="dialogConfig.buttons"
-    width="400px"
+    :width="dialogWidth"
     :showCancel="false"
     @close="dialogConfig.show = false"
   >
@@ -15,6 +15,10 @@
       label-width="0px"
       @submit.prevent
     >
+      <div class="panel-intro">
+        <div class="panel-title">更新账号密码</div>
+        <div class="panel-desc">建议定期更新密码，避免在公开演示或多设备登录后遗留风险。</div>
+      </div>
       <el-form-item label="" prop="oldPassword">
         <el-input
           type="password"
@@ -53,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, getCurrentInstance, nextTick } from "vue";
+import { ref, reactive, getCurrentInstance, nextTick, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 const { proxy } = getCurrentInstance();
 const router = useRouter();
@@ -65,6 +69,9 @@ const dialogConfig = ref({
   show: false,
   title: "修改密码",
   buttons: [],
+});
+const dialogWidth = computed(() => {
+  return window.innerWidth > 560 ? "420px" : "92%"
 });
 
 const checkRePassword = (rule, value, callback) => {
@@ -153,14 +160,30 @@ defineExpose({
       color: var(--text);
     }
   }
+  .panel-intro {
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-size: 20px;
+    line-height: 1.35;
+    font-weight: 700;
+    color: #fff;
+  }
+  .panel-desc {
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.68);
+    line-height: 1.7;
+  }
   .save-btn {
     width: 100%;
     cursor: pointer;
-    padding: 10px;
+    padding: 12px;
     text-align: center;
     border-radius: 50px;
     background: var(--btnBg);
+    box-shadow: var(--btnShadow);
     color: #fff;
+    font-weight: 600;
   }
 }
 </style>

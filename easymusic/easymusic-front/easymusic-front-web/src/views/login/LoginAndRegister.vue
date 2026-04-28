@@ -9,6 +9,11 @@
     :padding="20"
   >
     <div class="login-form">
+      <div class="auth-intro">
+        <div class="auth-kicker">{{ isLogin ? 'Welcome Back' : 'Create Account' }}</div>
+        <div class="auth-title">{{ isLogin ? '登录后继续创作和管理作品' : '注册后开始你的 AIGC 音乐创作' }}</div>
+        <div class="auth-desc">账号会关联作品、积分、AI 封面记录和后续发布状态。</div>
+      </div>
       <div class="error-msg">{{ errorMsg }}</div>
       <el-form
         :model="formData"
@@ -96,7 +101,7 @@
           </div>
         </el-form-item>
         <div class="login-btn" @click="submit">
-          {{ isLogin ? "登录" : "注册" }}
+          {{ showLoading ? (isLogin ? "登录中..." : "注册中...") : (isLogin ? "登录" : "注册") }}
         </div>
         <div class="bottom-link" @click="changeOpType">
           {{ isLogin ? "没有账号?" : "已有账号?" }}
@@ -247,7 +252,7 @@ const close = () => {
 
 <style lang="scss" scoped>
 .login-form {
-  padding: 0px 15px;
+  padding: 0px 15px 6px;
   :deep(.el-input__wrapper) {
     background-color: #fff0 !important;
     box-shadow: none !important;
@@ -257,6 +262,27 @@ const close = () => {
     .el-input__inner {
       color: #fff;
     }
+  }
+  .auth-intro {
+    margin-bottom: 10px;
+  }
+  .auth-kicker {
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.56);
+  }
+  .auth-title {
+    margin-top: 8px;
+    font-size: 24px;
+    line-height: 1.35;
+    font-weight: 700;
+    color: #fff;
+  }
+  .auth-desc {
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.68);
+    line-height: 1.7;
   }
   .error-msg {
     line-height: 30px;
@@ -270,7 +296,7 @@ const close = () => {
       cursor: pointer;
       width: 120px;
       margin-left: 5px;
-      border-radius: 5px;
+      border-radius: 10px;
     }
   }
 
@@ -280,17 +306,33 @@ const close = () => {
     width: 100%;
     border-radius: 30px;
     background: var(--btnBg);
+    box-shadow: var(--btnShadow);
     padding: 12px 0px;
     color: #fff;
     text-align: center;
     font-size: 16px;
+    font-weight: 600;
   }
   .bottom-link {
-    margin-top: 10px;
-    text-align: right;
+    margin-top: 14px;
+    text-align: center;
     font-size: 13px;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.8);
     cursor: pointer;
+  }
+}
+
+@media (max-width: 500px) {
+  .login-form {
+    padding: 0 6px 4px;
+    .auth-title {
+      font-size: 22px;
+    }
+    .check-code-panel {
+      .check-code {
+        width: 108px;
+      }
+    }
   }
 }
 </style>
