@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easymusic.mappers.AdminDashboardMapper">
+
+    <resultMap id="overview_result_map" type="com.easymusic.entity.vo.AdminDashboardVO">
+        <result column="total_user_count" property="totalUserCount"/>
+        <result column="today_new_user_count" property="todayNewUserCount"/>
+        <result column="active_creator_count" property="activeCreatorCount"/>
+        <result column="total_creation_count" property="totalCreationCount"/>
+        <result column="today_creation_count" property="todayCreationCount"/>
+        <result column="total_music_count" property="totalMusicCount"/>
+        <result column="success_music_count" property="successMusicCount"/>
+        <result column="today_success_music_count" property="todaySuccessMusicCount"/>
+        <result column="creating_music_count" property="creatingMusicCount"/>
+        <result column="failed_music_count" property="failedMusicCount"/>
+        <result column="published_music_count" property="publishedMusicCount"/>
+        <result column="draft_music_count" property="draftMusicCount"/>
+        <result column="hidden_music_count" property="hiddenMusicCount"/>
+        <result column="total_play_count" property="totalPlayCount"/>
+        <result column="total_good_count" property="totalGoodCount"/>
+        <result column="total_cover_task_count" property="totalCoverTaskCount"/>
+        <result column="success_cover_task_count" property="successCoverTaskCount"/>
+        <result column="today_cover_task_count" property="todayCoverTaskCount"/>
+        <result column="ai_prompt_count" property="aiPromptCount"/>
+        <result column="manual_prompt_count" property="manualPromptCount"/>
+        <result column="ai_cover_music_count" property="aiCoverMusicCount"/>
+        <result column="manual_cover_music_count" property="manualCoverMusicCount"/>
+        <result column="today_integral_consume" property="todayIntegralConsume"/>
+        <result column="today_recharge_amount" property="todayRechargeAmount"/>
+    </resultMap>
+
+    <resultMap id="top_model_result_map" type="com.easymusic.entity.vo.AdminDashboardModelVO">
+        <result column="model_name" property="modelName"/>
+        <result column="total_count" property="totalCount"/>
+        <result column="success_count" property="successCount"/>
+    </resultMap>
+
+    <resultMap id="hot_music_result_map" type="com.easymusic.entity.vo.AdminDashboardMusicVO">
+        <result column="music_id" property="musicId"/>
+        <result column="music_title" property="musicTitle"/>
+        <result column="nick_name" property="nickName"/>
+        <result column="cover" property="cover"/>
+        <result column="play_count" property="playCount"/>
+        <result column="good_count" property="goodCount"/>
+        <result column="publish_time" property="publishTime"/>
+    </resultMap>
+
+    <resultMap id="hot_creator_result_map" type="com.easymusic.entity.vo.AdminDashboardCreatorVO">
+        <result column="user_id" property="userId"/>
+        <result column="nick_name" property="nickName"/>
+        <result column="avatar" property="avatar"/>
+        <result column="music_count" property="musicCount"/>
+        <result column="total_play_count" property="totalPlayCount"/>
+        <result column="total_good_count" property="totalGoodCount"/>
+    </resultMap>
+
+    <select id="selectOverview" resultMap="overview_result_map">
+        select
+        (select count(1) from user_info) as total_user_count,
+        (select count(1) from user_info where date(create_time) = curdate()) as today_new_user_count,
+        (select count(distinct user_id) from music_creation where date(create_time) = curdate()) as active_creator_count,
+        (select count(1) from music_creation) as total_creation_count,
+        (select count(1) from music_creation where date(create_time) = curdate()) as today_creation_count,
+        (select count(1) from music_info) as total_music_count,
+        (select count(1) from music_info where music_status = 1) as success_music_count,
+        (select count(1) from music_info where date(create_time) = curdate() and music_status = 1) as today_success_music_count,
+        (select count(1) from music_info where music_status = 0) as creating_music_count,
+        (select count(1) from music_info where music_status = 2) as failed_music_count,
+        (select count(1) from music_info where publish_status = 1) as published_music_count,
+        (select count(1) from music_info where publish_status = 0 or publish_status is null) as draft_music_count,
+        (select count(1) from music_info where publish_status = 2) as hidden_music_count,
+        (select cast(ifnull(sum(play_count), 0) as signed) from music_info) as total_play_count,
+        (select cast(ifnull(sum(good_count), 0) as signed) from music_info) as total_good_count,
+        (select count(1) from music_cover_creation) as total_cover_task_count,
+        (select count(1) from music_cover_creation where status = 1) as success_cover_task_count,
+        (select count(1) from music_cover_creation where date(create_time) = curdate()) as today_cover_task_count,
+        (select count(1) from music_creation where prompt_source_type = 1) as ai_prompt_count,
+        (select count(1) from music_creation where ifnull(prompt_source_type, 0) = 0) as manual_prompt_count,
+        (select count(1) from music_info where cover_source = 1) as ai_cover_music_count,
+        (select count(1) from music_info where ifnull(cover_source, 0) = 0 and cover is not null and cover != '') as manual_cover_music_count,
+        (select cast(abs(ifnull(sum(change_integral), 0)) as signed)
+         from user_integral_record
+         where change_integral &lt; 0
+           and record_type in (1, 5, 7)
+           and date(create_time) = curdate()) as today_integral_consume,
+        (select cast(ifnull(sum(amount), 0) as decimal(12, 2))
+         from pay_order_info
+         where status = 1
+           and date(pay_time) = curdate()) as today_recharge_amount
+    </select>
+
+    <select id="selectTopModels" resultMap="top_model_result_map">
+        select
+        ifnull(nullif(trim(c.model), ''), '未设置') as model_name,
+        count(1) as total_count,
+        cast(ifnull(sum(case when m.music_status = 1 then 1 else 0 end), 0) as signed) as success_count
+        from music_creation c
+        left join music_info m on m.creation_id = c.creation_id
+        group by ifnull(nullif(trim(c.model), ''), '未设置')
+        order by total_count desc, success_count desc, model_name asc
+        limit #{limit}
+    </select>
+
+    <select id="selectHotMusics" resultMap="hot_music_result_map">
+        select
+        m.music_id,
+        m.music_title,
+        m.cover,
+        cast(ifnull(m.play_count, 0) as signed) as play_count,
+        cast(ifnull(m.good_count, 0) as signed) as good_count,
+        m.publish_time,
+        u.nick_name
+        from music_info m
+        left join user_info u on u.user_id = m.user_id
+        where m.music_status = 1
+          and m.publish_status = 1
+        order by m.good_count desc, m.play_count desc, m.publish_time desc, m.create_time desc
+        limit #{limit}
+    </select>
+
+    <select id="selectHotCreators" resultMap="hot_creator_result_map">
+        select
+        u.user_id,
+        u.nick_name,
+        u.avatar,
+        count(1) as music_count,
+        cast(ifnull(sum(m.play_count), 0) as signed) as total_play_count,
+        cast(ifnull(sum(m.good_count), 0) as signed) as total_good_count
+        from music_info m
+        left join user_info u on u.user_id = m.user_id
+        where m.music_status = 1
+          and m.publish_status = 1
+        group by u.user_id, u.nick_name, u.avatar
+        order by total_good_count desc, total_play_count desc, music_count desc, u.nick_name asc
+        limit #{limit}
+    </select>
+</mapper>

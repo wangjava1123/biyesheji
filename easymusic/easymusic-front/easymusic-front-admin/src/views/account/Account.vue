@@ -117,9 +117,9 @@ const doSubmit = () => {
     if (!result) {
       return;
     }
-    router.push("/dict/sysdict");
-    proxy.Message.success("登录成功");
     localStorage.setItem("token", result.data);
+    router.push("/dashboard/index");
+    proxy.Message.success("登录成功");
   });
 };
 </script>

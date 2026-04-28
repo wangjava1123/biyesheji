@@ -2,11 +2,9 @@
   <div class="layout">
     <div class="left">
       <div
-        :class="[
-          'menu-item',
-          item.codes.includes(route.meta.code) ? 'active' : '',
-        ]"
         v-for="item in menuList"
+        :key="item.url"
+        :class="['menu-item', item.codes.includes(route.meta.code) ? 'active' : '']"
         @click="jump(item)"
       >
         <div :class="['iconfont', `icon-${item.icon}`]"></div>
@@ -21,8 +19,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, getCurrentInstance, nextTick } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { getCurrentInstance, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
 const { proxy } = getCurrentInstance();
 const router = useRouter();
 const route = useRoute();
@@ -30,8 +29,14 @@ const route = useRoute();
 const menuList = ref([
   {
     icon: "dict",
+    name: "看板",
+    url: "/dashboard/index",
+    codes: ["dashboard"],
+  },
+  {
+    icon: "dict",
     name: "字典",
-    url: "/dict/sysDict",
+    url: "/dict/sysdict",
     codes: ["dict"],
   },
   {
@@ -80,7 +85,7 @@ const logout = async () => {
   proxy.Confirm({
     message: "确定要退出吗?",
     okfun: async () => {
-      let result = await proxy.Request({
+      const result = await proxy.Request({
         url: proxy.Api.logout,
       });
       if (!result) {
@@ -96,6 +101,7 @@ const logout = async () => {
 <style lang="scss" scoped>
 .layout {
   display: flex;
+
   .left {
     width: 80px;
     padding: 5px;
@@ -104,6 +110,7 @@ const logout = async () => {
     flex-direction: column;
     justify-content: center;
     background: #fafcff;
+
     .menu-item {
       display: flex;
       flex-direction: column;
@@ -112,26 +119,30 @@ const logout = async () => {
       border-radius: 10px;
       cursor: pointer;
       margin-bottom: 5px;
+
       &:hover {
         background: #f2f3f7;
       }
+
       .iconfont {
         font-size: 30px;
         color: #6d7286;
       }
+
       .name {
         font-size: 12px;
         margin-top: 3px;
       }
     }
+
     .active {
       background: #f2f3f7;
+
       .iconfont {
-        color: #1f2433;
         color: #1e5cff;
       }
+
       .name {
-        font-size: #1f2433;
         color: #1e5cff;
       }
     }
@@ -145,6 +156,7 @@ const logout = async () => {
       cursor: pointer;
     }
   }
+
   .right {
     flex: 1;
     padding: 10px;
