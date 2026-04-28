@@ -75,6 +75,39 @@
           </div>
         </div>
 
+        <div class="owner-panel" v-if="isOwner">
+          <div class="owner-head">
+            <div>
+              <div class="owner-kicker">作者侧管理</div>
+              <div class="owner-title">继续完善标题、封面和发布状态</div>
+            </div>
+            <div class="owner-status">{{ ownerStatusHint }}</div>
+          </div>
+          <div class="owner-actions">
+            <el-button plain size="large" @click="renameMusic" v-if="musicInfo.musicStatus === 1">
+              修改标题
+            </el-button>
+            <el-button plain size="large" @click="uploadCover" v-if="musicInfo.musicStatus === 1">
+              上传封面
+            </el-button>
+            <el-button plain size="large" @click="openAICoverDialog" v-if="musicInfo.musicStatus === 1">
+              AI 重做封面
+            </el-button>
+            <el-button type="success" plain size="large" @click="changePublishStatus(1)"
+              v-if="musicInfo.musicStatus === 1 && musicInfo.publishStatus !== 1">
+              发布作品
+            </el-button>
+            <el-button type="warning" plain size="large" @click="changePublishStatus(2)"
+              v-if="musicInfo.musicStatus === 1 && musicInfo.publishStatus === 1">
+              隐藏作品
+            </el-button>
+            <el-button plain size="large" @click="changePublishStatus(0)"
+              v-if="musicInfo.musicStatus === 1 && musicInfo.publishStatus !== 0">
+              设为草稿
+            </el-button>
+          </div>
+        </div>
+
         <div class="creation-panel" v-if="isOwner && (musicInfo.originPrompt || musicInfo.creationPrompt)">
           <div class="creation-head">
             <div class="creation-title">创作摘要</div>
@@ -120,6 +153,8 @@
       </div>
     </div>
 
+    <ImageCoverCut ref="imageCoverCutRef" :cutWidth="200" :scale="1" @cutImage="updateCover"></ImageCoverCut>
+    <MusicTitleUpdate ref="musicTitleUpdateRef" @update="updateTitle"></MusicTitleUpdate>
     <AICoverDialog ref="aiCoverDialogRef" @updated="applyCoverChange"></AICoverDialog>
   </div>
 </template>
@@ -130,9 +165,11 @@ import { useRouter, useRoute } from "vue-router";
 import ActionShare from "@/component/biz/ActionShare.vue";
 import ActionGood from "@/component/biz/ActionGood.vue";
 import AICoverDialog from "@/component/biz/AICoverDialog.vue";
+import ImageCoverCut from "@/component/common/ImageCoverCut.vue";
 import { useMusicPlayStore } from "@/stores/musicPlay.js";
 import { useUserInfoStore } from "@/stores/userInfoStore";
 import { mitter } from "@/eventbus/eventBus.js";
+import MusicTitleUpdate from "@/component/biz/MusicTitleUpdate.vue";
 
 const { proxy } = getCurrentInstance();
 const router = useRouter();
@@ -188,6 +225,22 @@ const canPublicInteract = computed(() => {
   return musicInfo.value.publishStatus === 1;
 });
 
+const ownerStatusHint = computed(() => {
+  if (musicInfo.value.musicStatus === 0) {
+    return "作品还在生成中，完成后可补封面并发布";
+  }
+  if (musicInfo.value.musicStatus === 2) {
+    return "作品生成失败，建议回到创作页调整提示词后重试";
+  }
+  if (musicInfo.value.publishStatus === 1) {
+    return "当前已公开展示，可继续隐藏或更新封面";
+  }
+  if (musicInfo.value.publishStatus === 2) {
+    return "当前已隐藏，仅作者自己可见";
+  }
+  return "当前仍是草稿，建议确认标题和封面后再发布";
+});
+
 const normalizeLyrics = (lyrics) => {
   if (!lyrics) {
     return [];
@@ -238,6 +291,28 @@ const applyCoverChange = (patchData) => {
   syncCurrentMusic(patchData);
 };
 
+const imageCoverCutRef = ref();
+const uploadCover = () => {
+  imageCoverCutRef.value.show();
+};
+
+const updateCover = async (file) => {
+  const result = await proxy.Request({
+    url: proxy.Api.uploadMusicCover,
+    params: {
+      cover: file,
+      musicId: musicInfo.value.musicId,
+    },
+  });
+  if (!result) {
+    return;
+  }
+  applyCoverChange({
+    cover: result.data,
+    coverSource: 0,
+  });
+};
+
 const playMusic = () => {
   if (musicPlayStore.currentMusic?.musicId === musicInfo.value.musicId) {
     mitter.emit("togglePlay");
@@ -260,9 +335,49 @@ const continueCreate = () => {
   router.push(`/idea/${musicInfo.value.creationId}`);
 };
 
+const musicTitleUpdateRef = ref();
+const renameMusic = () => {
+  musicTitleUpdateRef.value.show(musicInfo.value);
+};
+
+const updateTitle = (title) => {
+  musicInfo.value.musicTitle = title;
+  syncCurrentMusic({ musicTitle: title });
+};
+
 const aiCoverDialogRef = ref();
 const openAICoverDialog = () => {
   aiCoverDialogRef.value.show(musicInfo.value);
+};
+
+const changePublishStatus = (publishStatus) => {
+  const actionText = publishStatusMap[publishStatus] || "更新";
+  proxy.Confirm({
+    message: `确定将作品【${musicInfo.value.musicTitle || "未命名作品"}】设为${actionText}吗？`,
+    okfun: async () => {
+      const result = await proxy.Request({
+        url: proxy.Api.changePublishStatus,
+        params: {
+          musicId: musicInfo.value.musicId,
+          publishStatus,
+        },
+      });
+      if (!result) {
+        return;
+      }
+      musicInfo.value.publishStatus = publishStatus;
+      if (publishStatus === 1) {
+        musicInfo.value.publishTime = new Date();
+      } else if (publishStatus === 0) {
+        musicInfo.value.publishTime = null;
+      }
+      syncCurrentMusic({
+        publishStatus,
+        publishTime: musicInfo.value.publishTime,
+      });
+      proxy.Message.success("状态更新成功");
+    },
+  });
 };
 
 watch(
@@ -296,7 +411,12 @@ watch(
 .music-panel {
   display: flex;
   gap: 28px;
-  padding: 10px 16px 88px 10px;
+  padding: 22px 24px 88px 18px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 123, 84, 0.16), transparent 26%),
+    linear-gradient(135deg, rgba(13, 16, 34, 0.96), rgba(21, 26, 48, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .music-cover {
@@ -366,6 +486,49 @@ watch(
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.owner-panel {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.owner-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.owner-kicker {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.54);
+}
+
+.owner-title {
+  margin-top: 8px;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.owner-status {
+  max-width: 320px;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.7;
+}
+
+.owner-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -516,17 +679,28 @@ watch(
     flex-direction: column;
     text-align: center;
     gap: 18px;
+    padding: 18px 14px 88px;
+    border-radius: 22px;
   }
 
   .music-cover {
     margin: 0 auto;
+    width: 220px;
+    height: 220px;
+  }
+
+  .music-cover-bg {
+    width: 220px;
+    height: 220px;
+    background-size: cover;
   }
 
   .meta-panel,
   .stats-panel,
   .action-panel,
   .action-buttons,
-  .creation-tags {
+  .creation-tags,
+  .owner-actions {
     justify-content: center;
   }
 
@@ -540,6 +714,10 @@ watch(
 
   .creation-card-wide {
     grid-column: span 1;
+  }
+
+  .owner-status {
+    max-width: none;
   }
 
   .lyrics-panel {

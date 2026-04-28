@@ -149,6 +149,28 @@
           <div class="model-tips">{{ currentModel?.dictDesc || '系统会按照当前音乐类型提供可用模型。' }}</div>
         </div>
       </div>
+      <div class="summary-panel">
+        <div class="summary-head">
+          <div class="summary-title">本次提交摘要</div>
+          <div class="summary-tip">
+            提交后会进入右侧最近创作列表，后续还可以继续补封面、发布状态和作品信息。
+          </div>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-card" v-for="item in submitSummaryItems" :key="item.label">
+            <div class="summary-card-label">{{ item.label }}</div>
+            <div class="summary-card-value">{{ item.value }}</div>
+          </div>
+          <div class="summary-card summary-card-wide" v-if="summaryRawPrompt">
+            <div class="summary-card-title">一句话需求</div>
+            <div class="summary-card-content">{{ summaryRawPrompt }}</div>
+          </div>
+          <div class="summary-card summary-card-wide">
+            <div class="summary-card-title">最终音乐提示词</div>
+            <div class="summary-card-content">{{ summaryPromptText }}</div>
+          </div>
+        </div>
+      </div>
       <div class="submit-btn" @click="createMusic">
         <el-icon class="is-loading" v-if="creating">
           <Loading style="width: 1em; height: 1em" />
@@ -325,6 +347,10 @@ const createPromptSourceText = computed(() => {
   return formData.value.promptSourceType === 1 ? 'AI 扩写回填' : '手动输入 / 灵感库'
 })
 
+const currentModelText = computed(() => {
+  return currentModel.value?.dictCode || formData.value.model || '待选择'
+})
+
 const modeTipText = computed(() => {
   return formData.value.modeType === 0
     ? '简单模式适合快速开始，会优先围绕一句话需求和最终提示词完成创作。'
@@ -385,6 +411,66 @@ const assistHighlightItems = computed(() => {
     {
       label: '视觉风格',
       value: promptAssistResult.value.visualStyle || '未指定',
+    },
+  ]
+})
+
+const currentGenreText = computed(() => {
+  return formData.value.musicGener || promptAssistResult.value?.musicGenre || '待补充'
+})
+
+const currentEmotionText = computed(() => {
+  return formData.value.musicEmotion || promptAssistResult.value?.musicEmotion || '待补充'
+})
+
+const currentSexText = computed(() => {
+  if (formData.value.musicType === 1) {
+    return '纯音乐'
+  }
+  return formData.value.musicSex || promptAssistResult.value?.musicSex || '待补充'
+})
+
+const summaryRawPrompt = computed(() => {
+  return assistForm.value.rawPrompt || formData.value.originPrompt || ''
+})
+
+const summaryPromptText = computed(() => {
+  return formData.value.prompt || '还没有可提交的音乐提示词，请先填写或使用智能扩写。'
+})
+
+const submitSummaryItems = computed(() => {
+  return [
+    {
+      label: '创作类型',
+      value: musicTypeText.value,
+    },
+    {
+      label: '生成模式',
+      value: modeTypeText.value,
+    },
+    {
+      label: '提示词来源',
+      value: createPromptSourceText.value,
+    },
+    {
+      label: '当前模型',
+      value: currentModelText.value,
+    },
+    {
+      label: '曲风',
+      value: currentGenreText.value,
+    },
+    {
+      label: '情绪',
+      value: currentEmotionText.value,
+    },
+    {
+      label: '人声',
+      value: currentSexText.value,
+    },
+    {
+      label: '结构化结果',
+      value: assistStatusText.value,
     },
   ]
 })
@@ -806,6 +892,75 @@ onMounted(() => {
     border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
+  .summary-panel {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .summary-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .summary-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--hiText);
+  }
+
+  .summary-tip {
+    max-width: 420px;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .summary-grid {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .summary-card {
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(7, 8, 20, 0.34);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .summary-card-wide {
+    grid-column: span 4;
+  }
+
+  .summary-card-label,
+  .summary-card-title {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.56);
+  }
+
+  .summary-card-value {
+    margin-top: 8px;
+    color: var(--hiText);
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .summary-card-content {
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 0.82);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   .model-select {
     width: 100%;
     :deep(.el-radio-button) {
@@ -854,6 +1009,12 @@ onMounted(() => {
   }
 
   .create-form {
+    .summary-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .summary-card-wide {
+      grid-column: span 2;
+    }
     .advanced-panel {
       grid-template-columns: 1fr;
     }
@@ -874,6 +1035,15 @@ onMounted(() => {
   .create-form {
     .mode-strip-tip {
       max-width: none;
+    }
+    .summary-panel {
+      padding: 14px;
+    }
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+    .summary-card-wide {
+      grid-column: span 1;
     }
     .assist-panel {
       .assist-result-grid {
