@@ -40,6 +40,20 @@ public class MusicCoverCreation implements Serializable {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date finishTime;
 
+    private String musicTitle;
+
+    private String nickName;
+
+    private Integer musicStatus;
+
+    private Integer publishStatus;
+
+    private String currentCover;
+
+    private Integer coverSource;
+
+    private Integer coverGenerateCount;
+
     public String getCoverId() {
         return coverId;
     }
@@ -150,5 +164,61 @@ public class MusicCoverCreation implements Serializable {
 
     public void setFinishTime(Date finishTime) {
         this.finishTime = finishTime;
+    }
+
+    public String getMusicTitle() {
+        return musicTitle;
+    }
+
+    public void setMusicTitle(String musicTitle) {
+        this.musicTitle = musicTitle;
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public Integer getMusicStatus() {
+        return musicStatus;
+    }
+
+    public void setMusicStatus(Integer musicStatus) {
+        this.musicStatus = musicStatus;
+    }
+
+    public Integer getPublishStatus() {
+        return publishStatus;
+    }
+
+    public void setPublishStatus(Integer publishStatus) {
+        this.publishStatus = publishStatus;
+    }
+
+    public String getCurrentCover() {
+        return currentCover;
+    }
+
+    public void setCurrentCover(String currentCover) {
+        this.currentCover = currentCover;
+    }
+
+    public Integer getCoverSource() {
+        return coverSource;
+    }
+
+    public void setCoverSource(Integer coverSource) {
+        this.coverSource = coverSource;
+    }
+
+    public Integer getCoverGenerateCount() {
+        return coverGenerateCount;
+    }
+
+    public void setCoverGenerateCount(Integer coverGenerateCount) {
+        this.coverGenerateCount = coverGenerateCount;
     }
 }

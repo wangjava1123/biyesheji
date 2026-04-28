@@ -49,6 +49,13 @@ const router = createRouter({
           code: "music",
         }
       }, {
+        path: "/music/coverRecordList",
+        name: "封面任务",
+        component: () => import('@/views/music/CoverRecordList.vue'),
+        meta: {
+          code: "musicCover",
+        }
+      }, {
         path: "/user/userList",
         name: "用户",
         component: () => import('@/views/user/UserList.vue'),

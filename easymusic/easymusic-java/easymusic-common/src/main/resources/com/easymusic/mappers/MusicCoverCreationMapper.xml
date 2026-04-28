@@ -18,12 +18,151 @@
         <result column="fail_reason" property="failReason"/>
         <result column="create_time" property="createTime"/>
         <result column="finish_time" property="finishTime"/>
+        <result column="music_title" property="musicTitle"/>
+        <result column="nick_name" property="nickName"/>
+        <result column="music_status" property="musicStatus"/>
+        <result column="publish_status" property="publishStatus"/>
+        <result column="current_cover" property="currentCover"/>
+        <result column="cover_source" property="coverSource"/>
+        <result column="cover_generate_count" property="coverGenerateCount"/>
     </resultMap>
 
-    <sql id="base_column_list">
+    <sql id="cover_base_column_list">
         c.cover_id,c.music_id,c.user_id,c.creation_id,c.prompt,c.style,c.model,c.integral,
         c.task_id,c.cover_url,c.status,c.fail_reason,c.create_time,c.finish_time
     </sql>
+
+    <sql id="admin_base_column_list">
+        <include refid="cover_base_column_list"/>,
+        m.music_title,m.music_status,m.publish_status,
+        m.cover current_cover,m.cover_source,m.cover_generate_count,
+        u.nick_name
+    </sql>
+
+    <sql id="base_condition_filed">
+        <if test="query.coverId != null and query.coverId!=''">
+            and c.cover_id = #{query.coverId}
+        </if>
+        <if test="query.musicId != null and query.musicId!=''">
+            and c.music_id = #{query.musicId}
+        </if>
+        <if test="query.userId != null and query.userId!=''">
+            and c.user_id = #{query.userId}
+        </if>
+        <if test="query.creationId != null and query.creationId!=''">
+            and c.creation_id = #{query.creationId}
+        </if>
+        <if test="query.prompt != null and query.prompt!=''">
+            and c.prompt = #{query.prompt}
+        </if>
+        <if test="query.style != null and query.style!=''">
+            and c.style = #{query.style}
+        </if>
+        <if test="query.model != null and query.model!=''">
+            and c.model = #{query.model}
+        </if>
+        <if test="query.status != null">
+            and c.status = #{query.status}
+        </if>
+        <if test="query.failReason != null and query.failReason!=''">
+            and c.fail_reason = #{query.failReason}
+        </if>
+        <if test="query.publishStatus != null">
+            and m.publish_status = #{query.publishStatus}
+        </if>
+        <if test="query.musicStatus != null">
+            and m.music_status = #{query.musicStatus}
+        </if>
+        <if test="query.createTime != null and query.createTime!=''">
+            <![CDATA[ and  c.create_time=str_to_date(#{query.createTime}, '%Y-%m-%d') ]]>
+        </if>
+        <if test="query.finishTime != null and query.finishTime!=''">
+            <![CDATA[ and  c.finish_time=str_to_date(#{query.finishTime}, '%Y-%m-%d') ]]>
+        </if>
+    </sql>
+
+    <sql id="query_condition">
+        <where>
+            <include refid="base_condition_filed"/>
+            <if test="query.coverIdFuzzy!= null and query.coverIdFuzzy!=''">
+                and c.cover_id like concat('%', #{query.coverIdFuzzy}, '%')
+            </if>
+            <if test="query.musicIdFuzzy!= null and query.musicIdFuzzy!=''">
+                and c.music_id like concat('%', #{query.musicIdFuzzy}, '%')
+            </if>
+            <if test="query.userIdFuzzy!= null and query.userIdFuzzy!=''">
+                and c.user_id like concat('%', #{query.userIdFuzzy}, '%')
+            </if>
+            <if test="query.creationIdFuzzy!= null and query.creationIdFuzzy!=''">
+                and c.creation_id like concat('%', #{query.creationIdFuzzy}, '%')
+            </if>
+            <if test="query.promptFuzzy!= null and query.promptFuzzy!=''">
+                and c.prompt like concat('%', #{query.promptFuzzy}, '%')
+            </if>
+            <if test="query.styleFuzzy!= null and query.styleFuzzy!=''">
+                and c.style like concat('%', #{query.styleFuzzy}, '%')
+            </if>
+            <if test="query.modelFuzzy!= null and query.modelFuzzy!=''">
+                and c.model like concat('%', #{query.modelFuzzy}, '%')
+            </if>
+            <if test="query.failReasonFuzzy!= null and query.failReasonFuzzy!=''">
+                and c.fail_reason like concat('%', #{query.failReasonFuzzy}, '%')
+            </if>
+            <if test="query.musicTitleFuzzy!= null and query.musicTitleFuzzy!=''">
+                and m.music_title like concat('%', #{query.musicTitleFuzzy}, '%')
+            </if>
+            <if test="query.nickNameFuzzy!= null and query.nickNameFuzzy!=''">
+                and u.nick_name like concat('%', #{query.nickNameFuzzy}, '%')
+            </if>
+            <if test="query.createTimeStart!= null and query.createTimeStart!=''">
+                <![CDATA[ and  c.create_time>=str_to_date(#{query.createTimeStart}, '%Y-%m-%d') ]]>
+            </if>
+            <if test="query.createTimeEnd!= null and query.createTimeEnd!=''">
+                <![CDATA[ and  c.create_time< date_sub(str_to_date(#{query.createTimeEnd},'%Y-%m-%d'),interval -1 day) ]]>
+            </if>
+            <if test="query.finishTimeStart!= null and query.finishTimeStart!=''">
+                <![CDATA[ and  c.finish_time>=str_to_date(#{query.finishTimeStart}, '%Y-%m-%d') ]]>
+            </if>
+            <if test="query.finishTimeEnd!= null and query.finishTimeEnd!=''">
+                <![CDATA[ and  c.finish_time< date_sub(str_to_date(#{query.finishTimeEnd},'%Y-%m-%d'),interval -1 day) ]]>
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" resultMap="base_result_map">
+        SELECT <include refid="admin_base_column_list"/>
+        FROM music_cover_creation c
+        LEFT JOIN music_info m ON c.music_id = m.music_id
+        LEFT JOIN user_info u ON c.user_id = u.user_id
+        <include refid="query_condition"/>
+        <if test="query.orderBy!=null">
+            order by ${query.orderBy}
+        </if>
+        <if test="query.simplePage!=null">
+            limit #{query.simplePage.start},#{query.simplePage.end}
+        </if>
+    </select>
+
+    <select id="selectCount" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM music_cover_creation c
+        LEFT JOIN music_info m ON c.music_id = m.music_id
+        LEFT JOIN user_info u ON c.user_id = u.user_id
+        <include refid="query_condition"/>
+    </select>
+
+    <select id="selectAdminSummary" resultType="com.easymusic.entity.vo.MusicCoverSummaryVO">
+        SELECT count(1) totalCount,
+               ifnull(sum(case when c.status = 1 then 1 else 0 end), 0) successCount,
+               ifnull(sum(case when c.status = 2 then 1 else 0 end), 0) failCount,
+               ifnull(sum(case when c.status = 0 then 1 else 0 end), 0) creatingCount,
+               ifnull(sum(case when date(c.create_time) = curdate() then 1 else 0 end), 0) todayCount,
+               cast(count(distinct c.music_id) as signed) musicCount
+        FROM music_cover_creation c
+        LEFT JOIN music_info m ON c.music_id = m.music_id
+        LEFT JOIN user_info u ON c.user_id = u.user_id
+        <include refid="query_condition"/>
+    </select>
 
     <insert id="insert" parameterType="com.easymusic.entity.po.MusicCoverCreation">
         INSERT INTO music_cover_creation(
@@ -103,13 +242,13 @@
     </update>
 
     <select id="selectByCoverId" resultMap="base_result_map">
-        SELECT <include refid="base_column_list"/>
+        SELECT <include refid="cover_base_column_list"/>
         FROM music_cover_creation c
         WHERE c.cover_id = #{coverId}
     </select>
 
     <select id="selectRecentByMusicIdAndUserId" resultMap="base_result_map">
-        SELECT <include refid="base_column_list"/>
+        SELECT <include refid="cover_base_column_list"/>
         FROM music_cover_creation c
         WHERE c.music_id = #{musicId}
           AND c.user_id = #{userId}

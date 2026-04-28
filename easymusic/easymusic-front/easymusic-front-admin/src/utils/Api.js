@@ -14,6 +14,8 @@ const Api = {
     loadOrder: "/order/loadOrder",//订单
     loadMusic: "/music/loadMusic",//获取音乐列表
     changeMusicCommendType: "/music/changeMusicCommendType",//修改推荐状态
+    loadMusicCoverRecordList: "/musicCover/loadCoverRecordList",//获取AI封面任务列表
+    loadMusicCoverSummary: "/musicCover/loadCoverSummary",//获取AI封面任务统计
     loadUser: "/user/loadUser",//获取用户列表
     changeUserStatus: "/user/changeUserStatus",//修改用户状态
     changeIntegral: "/user/changeIntegral",//修改用户积分

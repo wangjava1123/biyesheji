@@ -8,6 +8,7 @@ import com.easymusic.entity.dto.PromptAssistResultDTO;
 import com.easymusic.entity.enums.MusicCoverSourceEnum;
 import com.easymusic.entity.enums.MusicCoverStatusEnum;
 import com.easymusic.entity.enums.MusicStatusEnum;
+import com.easymusic.entity.enums.PageSize;
 import com.easymusic.entity.enums.ResponseCodeEnum;
 import com.easymusic.entity.enums.UserIntegralRecordTypeEnum;
 import com.easymusic.entity.po.MusicCoverCreation;
@@ -15,8 +16,12 @@ import com.easymusic.entity.po.MusicCreation;
 import com.easymusic.entity.po.MusicInfo;
 import com.easymusic.entity.po.PromptOptimizeRecord;
 import com.easymusic.entity.po.SysDict;
+import com.easymusic.entity.query.MusicCoverCreationQuery;
 import com.easymusic.entity.query.MusicCreationQuery;
 import com.easymusic.entity.query.MusicInfoQuery;
+import com.easymusic.entity.query.SimplePage;
+import com.easymusic.entity.vo.MusicCoverSummaryVO;
+import com.easymusic.entity.vo.PaginationResultVO;
 import com.easymusic.exception.BusinessException;
 import com.easymusic.mappers.MusicCoverCreationMapper;
 import com.easymusic.mappers.MusicCreationMapper;
@@ -34,6 +39,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -154,6 +161,42 @@ public class MusicCoverServiceImpl implements MusicCoverService {
         getOwnedMusic(userId, musicId);
         int resolvedLimit = limit == null || limit < 1 ? 5 : Math.min(limit, 10);
         return musicCoverCreationMapper.selectRecentByMusicIdAndUserId(musicId, userId, resolvedLimit);
+    }
+
+    @Override
+    public PaginationResultVO<MusicCoverCreation> findListByPage(MusicCoverCreationQuery param) {
+        MusicCoverCreationQuery query = param == null ? new MusicCoverCreationQuery() : param;
+        int count = this.musicCoverCreationMapper.selectCount(query);
+        int pageSize = query.getPageSize() == null ? PageSize.SIZE15.getSize() : query.getPageSize();
+        SimplePage page = new SimplePage(query.getPageNo(), count, pageSize);
+        query.setSimplePage(page);
+        List<MusicCoverCreation> list = this.musicCoverCreationMapper.selectList(query);
+        return new PaginationResultVO<>(count, page.getPageSize(), page.getPageNo(), page.getPageTotal(), list);
+    }
+
+    @Override
+    public MusicCoverSummaryVO loadAdminSummary(MusicCoverCreationQuery param) {
+        MusicCoverSummaryVO summary = this.musicCoverCreationMapper.selectAdminSummary(copySummaryQuery(param));
+        if (summary == null) {
+            summary = new MusicCoverSummaryVO();
+        }
+        int totalCount = defaultZero(summary.getTotalCount());
+        int successCount = defaultZero(summary.getSuccessCount());
+        summary.setTotalCount(totalCount);
+        summary.setSuccessCount(successCount);
+        summary.setFailCount(defaultZero(summary.getFailCount()));
+        summary.setCreatingCount(defaultZero(summary.getCreatingCount()));
+        summary.setTodayCount(defaultZero(summary.getTodayCount()));
+        summary.setMusicCount(defaultZero(summary.getMusicCount()));
+        if (totalCount == 0) {
+            summary.setSuccessRate(0D);
+        } else {
+            double successRate = BigDecimal.valueOf(successCount * 100D / totalCount)
+                    .setScale(1, RoundingMode.HALF_UP)
+                    .doubleValue();
+            summary.setSuccessRate(successRate);
+        }
+        return summary;
     }
 
     private MusicInfo getOwnedMusic(String userId, String musicId) {
@@ -286,6 +329,44 @@ public class MusicCoverServiceImpl implements MusicCoverService {
             return "cover generate failed";
         }
         return message.length() > 500 ? message.substring(0, 500) : message;
+    }
+
+    private MusicCoverCreationQuery copySummaryQuery(MusicCoverCreationQuery source) {
+        MusicCoverCreationQuery query = new MusicCoverCreationQuery();
+        if (source == null) {
+            return query;
+        }
+        query.setCoverId(source.getCoverId());
+        query.setCoverIdFuzzy(source.getCoverIdFuzzy());
+        query.setMusicId(source.getMusicId());
+        query.setMusicIdFuzzy(source.getMusicIdFuzzy());
+        query.setUserId(source.getUserId());
+        query.setUserIdFuzzy(source.getUserIdFuzzy());
+        query.setCreationId(source.getCreationId());
+        query.setCreationIdFuzzy(source.getCreationIdFuzzy());
+        query.setPrompt(source.getPrompt());
+        query.setPromptFuzzy(source.getPromptFuzzy());
+        query.setStyle(source.getStyle());
+        query.setStyleFuzzy(source.getStyleFuzzy());
+        query.setModel(source.getModel());
+        query.setModelFuzzy(source.getModelFuzzy());
+        query.setFailReason(source.getFailReason());
+        query.setFailReasonFuzzy(source.getFailReasonFuzzy());
+        query.setCreateTime(source.getCreateTime());
+        query.setCreateTimeStart(source.getCreateTimeStart());
+        query.setCreateTimeEnd(source.getCreateTimeEnd());
+        query.setFinishTime(source.getFinishTime());
+        query.setFinishTimeStart(source.getFinishTimeStart());
+        query.setFinishTimeEnd(source.getFinishTimeEnd());
+        query.setMusicTitleFuzzy(source.getMusicTitleFuzzy());
+        query.setNickNameFuzzy(source.getNickNameFuzzy());
+        query.setPublishStatus(source.getPublishStatus());
+        query.setMusicStatus(source.getMusicStatus());
+        return query;
+    }
+
+    private int defaultZero(Integer value) {
+        return value == null ? 0 : value;
     }
 
     private record CoverPromptContext(String prompt, String style, String title) {

@@ -59,6 +59,12 @@ const menuList = ref([
     codes: ["music"],
   },
   {
+    icon: "music",
+    name: "封面",
+    url: "/music/coverRecordList",
+    codes: ["musicCover"],
+  },
+  {
     icon: "user",
     name: "用户",
     url: "/user/userList",
