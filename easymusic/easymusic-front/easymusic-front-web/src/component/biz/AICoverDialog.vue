@@ -2,14 +2,14 @@
   <Dialog
     :show="dialogConfig.show"
     :title="dialogConfig.title"
-    width="760px"
+    width="840px"
     :showCancel="false"
     @close="closeDialog"
   >
     <div class="cover-dialog">
       <div class="summary-panel">
         <div class="summary-cover">
-          <Cover :cover="previewCover" :width="140" borderRadius="14px"></Cover>
+          <Cover :cover="previewCover" :width="148" borderRadius="14px"></Cover>
         </div>
         <div class="summary-info">
           <div class="summary-title">{{ musicInfo.musicTitle || "未命名作品" }}</div>
@@ -19,21 +19,51 @@
             <span class="meta-tag">按系统配置扣减积分</span>
           </div>
           <div class="summary-desc">
-            使用当前作品的标题、歌词和封面提示词生成新封面。失败记录会保留，后端按既有逻辑处理退款。
+            当前会先加载系统默认封面提示词。你可以直接编辑“封面提示词”和“视觉风格”后再点击生成。
+          </div>
+          <div class="summary-tip" v-if="promptPreview.sourceDesc">
+            {{ promptPreview.sourceDesc }}
           </div>
           <div class="summary-actions">
+            <el-button :loading="promptLoading" @click="loadPromptPreview">刷新默认词</el-button>
+            <el-button @click="restoreDefaultPrompt" :disabled="promptLoading">恢复默认</el-button>
             <el-button type="primary" :loading="generating" @click="generateCover">
               立即生成
             </el-button>
-            <el-button :loading="recordLoading" @click="loadRecords">刷新记录</el-button>
           </div>
         </div>
+      </div>
+
+      <div class="editor-panel">
+        <div class="editor-head">
+          <div class="editor-title">封面提示词</div>
+          <div class="editor-subtitle">这里就是点击“立即生成”时真正传给图片 AI 的文本，你可以自行修改。</div>
+        </div>
+        <el-input
+          v-model="promptForm.prompt"
+          type="textarea"
+          :rows="5"
+          maxlength="1000"
+          show-word-limit
+          resize="none"
+          placeholder="请输入封面提示词"
+        />
+
+        <div class="editor-head style-head">
+          <div class="editor-title">视觉风格</div>
+          <div class="editor-subtitle">可选。比如“电影感插画”“赛博霓虹”“写实摄影”等。</div>
+        </div>
+        <el-input
+          v-model="promptForm.style"
+          maxlength="200"
+          placeholder="请输入视觉风格"
+        />
       </div>
 
       <div class="record-panel">
         <div class="record-header">
           <span>最近生成记录</span>
-          <span class="record-header-tip">仅展示当前作品最近 6 条记录</span>
+          <span class="record-header-tip">只展示当前作品最近 6 条封面记录</span>
         </div>
         <div v-if="recordLoading" class="record-empty">正在加载记录...</div>
         <div v-else-if="records.length === 0" class="record-empty">
@@ -44,7 +74,7 @@
             <div class="record-cover">
               <Cover
                 :cover="record.coverUrl || musicInfo.cover"
-                :width="84"
+                :width="88"
                 borderRadius="10px"
               ></Cover>
             </div>
@@ -76,8 +106,10 @@
 
 <script setup>
 import { computed, getCurrentInstance, ref } from "vue";
+import { useUserInfoStore } from "@/stores/userInfoStore";
 
 const { proxy } = getCurrentInstance();
+const userInfoStore = useUserInfoStore();
 
 const emits = defineEmits(["updated"]);
 
@@ -90,6 +122,19 @@ const musicInfo = ref({});
 const records = ref([]);
 const generating = ref(false);
 const recordLoading = ref(false);
+const promptLoading = ref(false);
+
+const promptPreview = ref({
+  title: "",
+  prompt: "",
+  style: "",
+  sourceDesc: "",
+});
+
+const promptForm = ref({
+  prompt: "",
+  style: "",
+});
 
 const coverSourceMap = {
   0: "当前封面：手动上传",
@@ -131,6 +176,33 @@ const closeDialog = () => {
   dialogConfig.value.show = false;
 };
 
+const restoreDefaultPrompt = () => {
+  promptForm.value = {
+    prompt: promptPreview.value.prompt || "",
+    style: promptPreview.value.style || "",
+  };
+};
+
+const loadPromptPreview = async () => {
+  if (!musicInfo.value.musicId) {
+    return;
+  }
+  promptLoading.value = true;
+  const result = await proxy.Request({
+    url: proxy.Api.musicCoverPromptPreview,
+    showLoading: false,
+    params: {
+      musicId: musicInfo.value.musicId,
+    },
+  });
+  promptLoading.value = false;
+  if (!result) {
+    return;
+  }
+  promptPreview.value = result.data || {};
+  restoreDefaultPrompt();
+};
+
 const loadRecords = async () => {
   if (!musicInfo.value.musicId) {
     return;
@@ -159,8 +231,11 @@ const generateCover = async () => {
   const result = await proxy.Request({
     url: proxy.Api.musicCoverGenerate,
     showLoading: false,
+    timeout: 120 * 1000,
     params: {
       musicId: musicInfo.value.musicId,
+      prompt: promptForm.value.prompt?.trim() || "",
+      style: promptForm.value.style?.trim() || "",
     },
   });
   await loadRecords();
@@ -176,6 +251,7 @@ const generateCover = async () => {
     coverSource: 1,
     coverGenerateCount: nextCount,
   };
+  userInfoStore.updateLastReloadTime();
   emits("updated", {
     cover: nextCover,
     coverSource: 1,
@@ -188,8 +264,18 @@ const generateCover = async () => {
 const show = async (music) => {
   musicInfo.value = { ...music };
   records.value = [];
+  promptPreview.value = {
+    title: "",
+    prompt: "",
+    style: "",
+    sourceDesc: "",
+  };
+  promptForm.value = {
+    prompt: "",
+    style: "",
+  };
   dialogConfig.value.show = true;
-  await loadRecords();
+  await Promise.all([loadPromptPreview(), loadRecords()]);
 };
 
 defineExpose({
@@ -247,11 +333,48 @@ defineExpose({
   line-height: 1.7;
 }
 
+.summary-tip {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.7;
+  font-size: 13px;
+}
+
 .summary-actions {
   margin-top: 18px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.editor-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.editor-head {
+  margin-bottom: 10px;
+}
+
+.style-head {
+  margin-top: 18px;
+}
+
+.editor-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.editor-subtitle {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .record-panel {
@@ -356,16 +479,15 @@ defineExpose({
   margin-top: 10px;
   line-height: 1.7;
   font-size: 13px;
+  word-break: break-word;
 }
 
 .record-prompt {
   color: rgba(255, 255, 255, 0.86);
-  word-break: break-word;
 }
 
 .record-fail {
   color: #ffb3b3;
-  word-break: break-word;
 }
 
 @media (max-width: 640px) {

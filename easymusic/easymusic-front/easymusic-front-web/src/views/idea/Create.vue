@@ -54,7 +54,7 @@
             </el-icon>
             <span v-else>智能扩写</span>
           </div>
-          <div class="assist-tip">扩写后会自动回填音乐提示词，并记录增强来源。</div>
+          <div class="assist-tip">扩写后会自动回填专业级音乐提示词，并同步生成与音乐语义闭环的封面提示词。</div>
         </div>
         <div class="assist-result" v-if="promptAssistResult">
           <div class="assist-result-head">
@@ -475,20 +475,48 @@ const submitSummaryItems = computed(() => {
   ]
 })
 
+const normalizeMusicSex = (value, musicType = formData.value.musicType) => {
+  if (musicType === 1) {
+    return ''
+  }
+  const text = `${value || ''}`.trim()
+  if (!text) {
+    return ''
+  }
+  const lower = text.toLowerCase()
+  if (text.includes('合唱') || text.includes('对唱') || lower.includes('choir') || lower.includes('choral') || lower.includes('duet')) {
+    return '合唱'
+  }
+  if (text.includes('童声') || lower.includes('child') || lower.includes('kid')) {
+    return '童声'
+  }
+  if (text.includes('男') || lower.includes('male') || lower.includes('tenor') || lower.includes('baritone')) {
+    return '男声'
+  }
+  if (text.includes('女') || lower.includes('female') || lower.includes('soprano') || lower.includes('alto')) {
+    return '女声'
+  }
+  if (text.includes('纯音乐') || text.includes('配乐') || lower.includes('instrumental')) {
+    return ''
+  }
+  return text.length <= 5 ? text : ''
+}
+
 const applyAssistResult = (result) => {
   promptAssistResult.value = result
   formData.value.prompt = result.musicPrompt
   formData.value.originPrompt = result.rawPrompt
   formData.value.promptRecordId = result.recordId
   formData.value.promptSourceType = 1
-  if (!formData.value.musicGener && result.musicGenre) {
+  if (result.musicGenre) {
     formData.value.musicGener = result.musicGenre
   }
-  if (!formData.value.musicEmotion && result.musicEmotion) {
+  if (result.musicEmotion) {
     formData.value.musicEmotion = result.musicEmotion
   }
-  if (formData.value.musicType === 0 && !formData.value.musicSex && result.musicSex && result.musicSex !== '纯音乐') {
-    formData.value.musicSex = result.musicSex
+  const normalizedMusicSex = normalizeMusicSex(result.musicSex, formData.value.musicType)
+  if (formData.value.musicType === 0 && normalizedMusicSex) {
+    formData.value.musicSex = normalizedMusicSex
   }
 }
 
@@ -509,14 +537,21 @@ const generatePromptAssist = async () => {
     params: {
       rawPrompt: assistForm.value.rawPrompt,
       bizType: 'MUSIC_CREATE',
+      musicType: formData.value.musicType,
+      modeType: formData.value.modeType,
+      musicGenre: formData.value.musicGener || '',
+      musicEmotion: formData.value.musicEmotion || '',
+      musicSex: normalizeMusicSex(formData.value.musicSex, formData.value.musicType),
     },
     showLoading: false,
+    timeout: 60 * 1000,
   })
   assistLoading.value = false
   if (!result) {
     return
   }
   applyAssistResult(result.data)
+  userInfoStore.updateLastReloadTime()
   proxy.Message.success('扩写结果已回填到创作表单')
 }
 
@@ -534,10 +569,15 @@ const createMusic = async () => {
     return
   }
   creating.value = true
+  const submitParams = {
+    ...formData.value,
+    musicSex: normalizeMusicSex(formData.value.musicSex, formData.value.musicType),
+  }
   let result = await proxy.Request({
     url: proxy.Api.createMusic,
-    params: { ...formData.value },
+    params: submitParams,
     showLoading: false,
+    timeout: 120 * 1000,
   })
   creating.value = false
   if (!result) {
@@ -572,6 +612,7 @@ const getCreation = async () => {
   if (result.data.modeType == 1) {
     result.data = { ...result.data, ...JSON.parse(result.data.settings) }
   }
+  result.data.musicSex = normalizeMusicSex(result.data.musicSex, result.data.musicType)
   formData.value = result.data
   assistForm.value.rawPrompt = result.data.originPrompt || ''
 }
