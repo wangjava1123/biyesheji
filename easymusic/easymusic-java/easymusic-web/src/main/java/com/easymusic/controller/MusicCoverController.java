@@ -11,6 +11,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/musicCover")
 @Validated
@@ -24,6 +26,14 @@ public class MusicCoverController extends ABaseController {
     public ResponseVO generate(@NotEmpty String musicId) {
         TokenUserInfoDTO tokenUserInfoDTO = getTokenUserInfo(null);
         MusicCoverCreation result = musicCoverService.generateCover(tokenUserInfoDTO.getUserId(), musicId.trim());
+        return getSuccessResponseVO(result);
+    }
+
+    @RequestMapping("/records")
+    @GlobalInterceptor(checkLogin = true)
+    public ResponseVO records(@NotEmpty String musicId, Integer limit) {
+        TokenUserInfoDTO tokenUserInfoDTO = getTokenUserInfo(null);
+        List<MusicCoverCreation> result = musicCoverService.listCoverRecords(tokenUserInfoDTO.getUserId(), musicId.trim(), limit);
         return getSuccessResponseVO(result);
     }
 }

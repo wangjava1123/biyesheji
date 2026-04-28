@@ -78,10 +78,7 @@ public class MusicCoverServiceImpl implements MusicCoverService {
 
     @Override
     public MusicCoverCreation generateCover(String userId, String musicId) {
-        MusicInfo musicInfo = musicInfoMapper.selectByMusicId(musicId);
-        if (musicInfo == null || !userId.equals(musicInfo.getUserId())) {
-            throw new BusinessException(ResponseCodeEnum.CODE_600);
-        }
+        MusicInfo musicInfo = getOwnedMusic(userId, musicId);
         if (!MusicStatusEnum.CREATED.getStatus().equals(musicInfo.getMusicStatus())) {
             throw new BusinessException("作品尚未生成完成，不能生成AI封面");
         }
@@ -150,6 +147,21 @@ public class MusicCoverServiceImpl implements MusicCoverService {
             musicCoverCreationMapper.updateByCoverId(updateRecord, coverId);
             throw e;
         }
+    }
+
+    @Override
+    public List<MusicCoverCreation> listCoverRecords(String userId, String musicId, Integer limit) {
+        getOwnedMusic(userId, musicId);
+        int resolvedLimit = limit == null || limit < 1 ? 5 : Math.min(limit, 10);
+        return musicCoverCreationMapper.selectRecentByMusicIdAndUserId(musicId, userId, resolvedLimit);
+    }
+
+    private MusicInfo getOwnedMusic(String userId, String musicId) {
+        MusicInfo musicInfo = musicInfoMapper.selectByMusicId(musicId);
+        if (musicInfo == null || !userId.equals(musicInfo.getUserId())) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        return musicInfo;
     }
 
     private CoverPromptContext buildPromptContext(MusicInfo musicInfo, MusicCreation musicCreation) {

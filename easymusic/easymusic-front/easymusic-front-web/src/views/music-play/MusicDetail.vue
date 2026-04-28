@@ -10,13 +10,27 @@
           ]"
         ></div>
         <div class="cover">
-          <Cover :width="150" :cover="musicInfo.cover" borderRadius="75px">
-          </Cover>
+          <Cover :width="150" :cover="musicInfo.cover" borderRadius="75px"></Cover>
         </div>
       </div>
+
       <div class="music-info">
-        <div class="music-title">{{ musicInfo.musicTitle }}</div>
+        <div class="music-title">{{ musicInfo.musicTitle || "未命名作品" }}</div>
         <div class="user-info">{{ musicInfo.nickName || "--" }}</div>
+
+        <div class="meta-panel">
+          <span class="meta-tag" v-if="isOwner">
+            {{ publishStatusText }}
+          </span>
+          <span class="meta-tag">
+            {{ coverSourceText }}
+          </span>
+          <span class="meta-tag">AI 封面 {{ musicInfo.coverGenerateCount || 0 }} 次</span>
+          <span class="meta-tag" v-if="isOwner && musicInfo.publishStatus === 1 && musicInfo.publishTime">
+            发布于 {{ musicInfo.publishTime }}
+          </span>
+        </div>
+
         <div class="action-panel">
           <div
             :class="[
@@ -25,20 +39,24 @@
             ]"
             @click="playMusic"
           ></div>
-          <div class="op-item">
+          <div class="op-item" v-if="canPublicInteract">
             <ActionGood :data="musicInfo"></ActionGood>
           </div>
-          <div class="op-item">
+          <div class="op-item" v-if="canPublicInteract">
             <ActionShare :data="musicInfo"></ActionShare>
           </div>
-          <div class="op-item">
-            <el-button type="primary" size="large" @click="createSame"
-              >做同款</el-button
-            >
+          <div class="action-buttons">
+            <el-button type="primary" size="large" @click="createSame">
+              做同款
+            </el-button>
+            <el-button size="large" @click="openAICoverDialog" v-if="isOwner && musicInfo.musicStatus === 1">
+              AI 生成封面
+            </el-button>
           </div>
         </div>
+
         <div class="lyrics-panel" v-if="musicInfo.musicType === 0">
-          <div class="lyrics-title">歌词：</div>
+          <div class="lyrics-title">歌词</div>
           <div
             :class="[
               'lyrics-item',
@@ -48,6 +66,7 @@
                 : '',
             ]"
             v-for="item in musicInfo.lyrics"
+            :key="`${item.start}-${item.end}`"
           >
             {{ item.text }}
           </div>
@@ -55,32 +74,73 @@
         <div v-else class="lyrics-panel">纯音乐，请欣赏。</div>
       </div>
     </div>
+
+    <AICoverDialog ref="aiCoverDialogRef" @updated="applyCoverChange"></AICoverDialog>
   </div>
 </template>
 
 <script setup>
+import { computed, getCurrentInstance, ref, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import ActionShare from "@/component/biz/ActionShare.vue";
 import ActionGood from "@/component/biz/ActionGood.vue";
-import {
-  ref,
-  reactive,
-  getCurrentInstance,
-  nextTick,
-  onMounted,
-  watch,
-} from "vue";
-import { useRouter, useRoute } from "vue-router";
+import AICoverDialog from "@/component/biz/AICoverDialog.vue";
+import { useMusicPlayStore } from "@/stores/musicPlay.js";
+import { useUserInfoStore } from "@/stores/userInfoStore";
+import { mitter } from "@/eventbus/eventBus.js";
+
 const { proxy } = getCurrentInstance();
 const router = useRouter();
 const route = useRoute();
-import { useMusicPlayStore } from "@/stores/musicPlay.js";
 const musicPlayStore = useMusicPlayStore();
-import { mitter } from "@/eventbus/eventBus.js";
+const userInfoStore = useUserInfoStore();
 
 const currentMusicId = ref(route.params.musicId);
 const musicInfo = ref({});
+
+const publishStatusMap = {
+  0: "草稿作品",
+  1: "已发布作品",
+  2: "已隐藏作品",
+};
+
+const coverSourceMap = {
+  0: "当前封面：手动上传",
+  1: "当前封面：AI 生成",
+};
+
+const isOwner = computed(() => {
+  return userInfoStore.userInfo.userId === musicInfo.value.userId;
+});
+
+const publishStatusText = computed(() => {
+  return publishStatusMap[musicInfo.value.publishStatus ?? 0] || "草稿作品";
+});
+
+const coverSourceText = computed(() => {
+  return coverSourceMap[musicInfo.value.coverSource ?? 0] || "当前封面：未设置";
+});
+
+const canPublicInteract = computed(() => {
+  return musicInfo.value.publishStatus === 1;
+});
+
+const normalizeLyrics = (lyrics) => {
+  if (!lyrics) {
+    return [];
+  }
+  if (Array.isArray(lyrics)) {
+    return lyrics;
+  }
+  try {
+    return JSON.parse(lyrics);
+  } catch (error) {
+    return [];
+  }
+};
+
 const getMusicInfo = async (autoPlay) => {
-  let result = await proxy.Request({
+  const result = await proxy.Request({
     url: proxy.Api.musicDetail,
     params: {
       musicId: currentMusicId.value,
@@ -89,10 +149,7 @@ const getMusicInfo = async (autoPlay) => {
   if (!result) {
     return;
   }
-  if (result.data.musicType === 0) {
-    const lyrics = JSON.parse(result.data.lyrics);
-    result.data.lyrics = lyrics;
-  }
+  result.data.lyrics = normalizeLyrics(result.data.lyrics);
   musicInfo.value = result.data;
   if (!autoPlay) {
     return;
@@ -100,8 +157,26 @@ const getMusicInfo = async (autoPlay) => {
   musicPlayStore.play({ ...result.data });
 };
 
+const syncCurrentMusic = (patchData) => {
+  if (musicPlayStore.currentMusic?.musicId !== musicInfo.value.musicId) {
+    return;
+  }
+  musicPlayStore.currentMusic = {
+    ...musicPlayStore.currentMusic,
+    ...patchData,
+  };
+};
+
+const applyCoverChange = (patchData) => {
+  musicInfo.value = {
+    ...musicInfo.value,
+    ...patchData,
+  };
+  syncCurrentMusic(patchData);
+};
+
 const playMusic = () => {
-  if (musicPlayStore.currentMusic?.musicId == musicInfo.value.musicId) {
+  if (musicPlayStore.currentMusic?.musicId === musicInfo.value.musicId) {
     mitter.emit("togglePlay");
     return;
   }
@@ -112,134 +187,189 @@ const createSame = () => {
   router.push(`/idea/${musicInfo.value.creationId}`);
 };
 
+const aiCoverDialogRef = ref();
+const openAICoverDialog = () => {
+  aiCoverDialogRef.value.show(musicInfo.value);
+};
+
 watch(
   () => route.params.musicId,
-  async (newVal, oldVal) => {
+  (newVal) => {
     if (!newVal) {
       return;
     }
     currentMusicId.value = newVal;
     getMusicInfo(true);
   },
-  { immediate: true, deep: true }
+  { immediate: true }
 );
+
 watch(
   () => musicPlayStore.currentMusic.musicId,
-  async (newVal, oldVal) => {
-    if (!newVal) {
+  (newVal) => {
+    if (!newVal || newVal === route.params.musicId) {
       return;
     }
     router.push(`/play/${newVal}`);
-  },
-  { immediate: true, deep: true }
+  }
 );
 </script>
 
 <style lang="scss" scoped>
 .music-detail-body {
-  padding: 20px 0px 0px 20px;
-  .music-panel {
-    display: flex;
-    padding: 10px 10px 80px 10px;
-    .music-cover {
-      width: 250px;
-      height: 250px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      .music-cover-bg {
-        position: absolute;
-        left: 0px;
-        top: 0px;
-        width: 250px;
-        height: 250px;
-        background: url("../../assets/img/play_cover_bg.png");
-        background-repeat: no-repeat;
-      }
-      .music-cover-bg-playing {
-        animation: rotateBackground 30s linear infinite;
-      }
-      .cover {
-        position: absolute;
-        z-index: 2;
-      }
-      .play-btn {
-        position: absolute;
-        z-index: 3;
-        cursor: pointer;
-      }
-    }
-    .music-info {
-      flex: 1;
-      color: #fff;
-      margin-left: 30px;
-      .music-title {
-        font-size: 25px;
-      }
-      .user-info {
-        margin-top: 10px;
-      }
-      .action-panel {
-        margin-top: 10px;
-        display: flex;
-        align-items: center;
-        .op-item {
-          margin-right: 30px;
-          cursor: pointer;
-          width: 40px;
-          height: 40px;
-        }
-        .iconfont {
-          font-size: 25px;
-        }
-        .active {
-          color: var(--purple);
-        }
-        .play-btn {
-          font-size: 20px;
-          background: #fff;
-          border-radius: 50%;
-          color: var(--purple);
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-      }
-      .lyrics-panel {
-        margin-top: 20px;
-        .lyrics-title {
-          font-size: 20px;
-        }
-        .lyrics-item {
-          padding: 5px 0px;
-          font-size: 16px;
-        }
-        .active {
-          color: #b939f6;
-          font-size: 18px;
-        }
-      }
-    }
+  padding: 20px 0 0 20px;
+}
+
+.music-panel {
+  display: flex;
+  gap: 28px;
+  padding: 10px 16px 88px 10px;
+}
+
+.music-cover {
+  width: 250px;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.music-cover-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 250px;
+  height: 250px;
+  background: url("../../assets/img/play_cover_bg.png") no-repeat;
+}
+
+.music-cover-bg-playing {
+  animation: rotateBackground 30s linear infinite;
+}
+
+.cover {
+  position: absolute;
+  z-index: 2;
+}
+
+.music-info {
+  flex: 1;
+  min-width: 0;
+  color: #fff;
+}
+
+.music-title {
+  font-size: 30px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.user-info {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.meta-panel {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.meta-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+}
+
+.action-panel {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.op-item {
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+}
+
+.iconfont {
+  font-size: 25px;
+}
+
+.play-btn {
+  font-size: 20px;
+  background: #fff;
+  border-radius: 50%;
+  color: var(--purple);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lyrics-panel {
+  margin-top: 26px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lyrics-title {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.lyrics-item {
+  padding: 6px 0;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.lyrics-item.active {
+  color: #ffd36d;
+  font-size: 18px;
+}
+
+@media (max-width: 720px) {
+  .music-detail-body {
+    padding: 14px 10px 0;
   }
 
-  @media (max-width: 500px) {
-    .music-panel {
-      flex-direction: column;
-      text-align: center;
-      .music-cover {
-        margin: 0px auto;
-      }
-      .music-info {
-        margin-left: 0px;
-        margin-top: 5px;
-        .action-panel {
-          justify-content: space-around;
-        }
-      }
-    }
+  .music-panel {
+    flex-direction: column;
+    text-align: center;
+    gap: 18px;
+  }
+
+  .music-cover {
+    margin: 0 auto;
+  }
+
+  .meta-panel,
+  .action-panel,
+  .action-buttons {
+    justify-content: center;
+  }
+
+  .lyrics-panel {
+    text-align: left;
   }
 }
 
@@ -247,6 +377,7 @@ watch(
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }

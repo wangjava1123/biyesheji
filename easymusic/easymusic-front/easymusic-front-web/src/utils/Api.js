@@ -14,6 +14,8 @@ const Api = {
     getCreation: "/music/getCreation",//做同款
     musicDetail: "/music/musicDetail",//音乐详情
     promptAssistGenerate: "/promptAssist/generate",//提示词增强
+    musicCoverGenerate: "/musicCover/generate",//AI生成封面
+    musicCoverRecords: "/musicCover/records",//AI封面记录
     loadSysDict: "/my/loadSysDict",//获取系统字典
     createMusic: "/my/createMusic",//创作音乐
     loadMyMusic: "/my/loadMyMusic",//获取我的音乐

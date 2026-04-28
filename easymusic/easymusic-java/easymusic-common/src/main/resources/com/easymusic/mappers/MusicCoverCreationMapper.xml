@@ -108,4 +108,13 @@
         WHERE c.cover_id = #{coverId}
     </select>
 
+    <select id="selectRecentByMusicIdAndUserId" resultMap="base_result_map">
+        SELECT <include refid="base_column_list"/>
+        FROM music_cover_creation c
+        WHERE c.music_id = #{musicId}
+          AND c.user_id = #{userId}
+        ORDER BY c.create_time DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>
