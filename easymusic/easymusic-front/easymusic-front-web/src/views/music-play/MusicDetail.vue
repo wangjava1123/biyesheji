@@ -31,6 +31,23 @@
           </span>
         </div>
 
+        <div class="stats-panel">
+          <div class="stats-card">
+            <div class="stats-label">累计播放</div>
+            <div class="stats-value">{{ musicInfo.playCount || 0 }}</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-label">累计获赞</div>
+            <div class="stats-value">{{ musicInfo.goodCount || 0 }}</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-label">创建时间</div>
+            <div class="stats-value stats-value-time">
+              {{ musicInfo.createTime ? proxy.Utils.formatDate(musicInfo.createTime) : '--' }}
+            </div>
+          </div>
+        </div>
+
         <div class="action-panel">
           <div
             :class="[
@@ -48,6 +65,9 @@
           <div class="action-buttons">
             <el-button type="primary" size="large" @click="createSame">
               做同款
+            </el-button>
+            <el-button size="large" @click="continueCreate" v-if="isOwner && musicInfo.creationId">
+              继续创作
             </el-button>
             <el-button size="large" @click="openAICoverDialog" v-if="isOwner && musicInfo.musicStatus === 1">
               AI 生成封面
@@ -227,6 +247,16 @@ const playMusic = () => {
 };
 
 const createSame = () => {
+  if (!musicInfo.value.creationId) {
+    return;
+  }
+  router.push(`/idea/${musicInfo.value.creationId}`);
+};
+
+const continueCreate = () => {
+  if (!musicInfo.value.creationId) {
+    return;
+  }
   router.push(`/idea/${musicInfo.value.creationId}`);
 };
 
@@ -337,6 +367,37 @@ watch(
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.stats-panel {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stats-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stats-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.stats-value {
+  margin-top: 8px;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.stats-value-time {
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .op-item {
@@ -462,10 +523,15 @@ watch(
   }
 
   .meta-panel,
+  .stats-panel,
   .action-panel,
   .action-buttons,
   .creation-tags {
     justify-content: center;
+  }
+
+  .stats-panel {
+    grid-template-columns: 1fr;
   }
 
   .creation-grid {

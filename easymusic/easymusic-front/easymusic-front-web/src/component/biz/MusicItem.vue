@@ -48,8 +48,19 @@
       </div>
       <div class="lyrics" v-else-if="data.musicStatus === 1">纯音乐，请欣赏</div>
 
+      <div class="stat-row" v-if="data.musicStatus === 1">
+        <span class="stat-item">
+          <i class="iconfont icon-play"></i>
+          {{ data.playCount || 0 }}
+        </span>
+        <span class="stat-item">
+          <i :class="['iconfont', data.doGood ? 'icon-good-solid' : 'icon-good']"></i>
+          {{ data.goodCount || 0 }}
+        </span>
+      </div>
+
       <div class="time">
-        {{ proxy.Utils.seconds2Min(data.duration) || "--" }} ·
+        {{ proxy.Utils.seconds2Min(data.duration) || "--" }} · 创建于
         {{ proxy.Utils.formatDate(data.createTime) }}
       </div>
     </div>
@@ -309,7 +320,8 @@ const changePublishStatus = (publishStatus) => {
   border: 1px solid hsla(0, 0%, 100%, 0.18);
   border-radius: 14px;
   color: #fff;
-  display: flex;
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   overflow: hidden;
@@ -356,6 +368,7 @@ const changePublishStatus = (publishStatus) => {
 .music-info {
   flex: 1;
   width: 0;
+  min-width: 0;
 }
 
 .music-title {
@@ -457,6 +470,26 @@ const changePublishStatus = (publishStatus) => {
   font-size: 12px;
 }
 
+.stat-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.stat-item .iconfont {
+  font-size: 14px;
+}
+
 .time {
   margin-top: 6px;
   font-size: 13px;
@@ -464,8 +497,7 @@ const changePublishStatus = (publishStatus) => {
 }
 
 .op-panel {
-  width: 84px;
-  margin-left: auto;
+  width: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -501,31 +533,54 @@ const changePublishStatus = (publishStatus) => {
   font-size: 12px;
 }
 
+@media (max-width: 980px) {
+  .music-item {
+    grid-template-columns: 100px minmax(0, 1fr);
+    align-items: flex-start;
+  }
+
+  .op-panel,
+  .manage-panel {
+    width: auto;
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 720px) {
   .music-item {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    grid-template-columns: 1fr;
+  }
+
+  .cover,
+  .music-info,
+  .op-panel,
+  .manage-panel {
+    grid-column: 1;
+  }
+
+  .cover {
+    justify-self: start;
   }
 
   .op-panel,
   .manage-panel {
     width: 100%;
-    margin-left: 112px;
   }
 }
 
 @media (max-width: 520px) {
   .music-item {
     gap: 10px;
+    padding: 10px;
   }
 
   .music-title {
     font-size: 18px;
   }
 
-  .op-panel,
   .manage-panel {
-    margin-left: 0;
+    width: 100%;
   }
 }
 </style>

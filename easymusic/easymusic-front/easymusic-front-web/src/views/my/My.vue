@@ -38,6 +38,14 @@
       </div>
     </div>
 
+    <div class="overview-grid">
+      <div class="overview-card" v-for="card in summaryCards" :key="card.label">
+        <div class="overview-label">{{ card.label }}</div>
+        <div class="overview-value">{{ card.value }}</div>
+        <div class="overview-desc">{{ card.desc }}</div>
+      </div>
+    </div>
+
     <div class="data-list">
       <DataLoadMoreList :dataSource="dataSource" :loading="loading" @loadData="loadMusicList">
         <template #default="{ data }">
@@ -98,6 +106,84 @@ const aiPromptCount = computed(() => {
 })
 const aiCoverCount = computed(() => {
   return (dataSource.value.list || []).reduce((sum, item) => sum + (item.coverGenerateCount || 0), 0)
+})
+
+const totalPlayCount = computed(() => {
+  return (dataSource.value.list || []).reduce((sum, item) => sum + (item.playCount || 0), 0)
+})
+
+const totalGoodCount = computed(() => {
+  return (dataSource.value.list || []).reduce((sum, item) => sum + (item.goodCount || 0), 0)
+})
+
+const statusSummary = computed(() => {
+  const list = dataSource.value.list || []
+  return {
+    published: list.filter((item) => item.publishStatus === 1).length,
+    draft: list.filter((item) => item.publishStatus === 0).length,
+    hidden: list.filter((item) => item.publishStatus === 2).length,
+    creating: list.filter((item) => item.musicStatus === 0).length,
+    failed: list.filter((item) => item.musicStatus === 2).length,
+  }
+})
+
+const latestWorkTime = computed(() => {
+  const list = dataSource.value.list || []
+  if (list.length === 0) {
+    return '--'
+  }
+  const latestItem = list.find((item) => item.publishTime || item.createTime)
+  const latestTime = latestItem?.publishTime || latestItem?.createTime
+  return latestTime ? proxy.Utils.formatDate(latestTime) : '--'
+})
+
+const summaryCards = computed(() => {
+  if (tabType.value === 1) {
+    return [
+      {
+        label: '已加载收藏',
+        value: loadedCount.value,
+        desc: '当前列表中已公开可回听的作品数量',
+      },
+      {
+        label: '累计播放',
+        value: totalPlayCount.value,
+        desc: '这些作品当前累积的播放量',
+      },
+      {
+        label: '累计获赞',
+        value: totalGoodCount.value,
+        desc: '这些作品当前累积的点赞量',
+      },
+      {
+        label: '最近更新',
+        value: latestWorkTime.value,
+        desc: '按当前已加载列表取最近时间',
+      },
+    ]
+  }
+  return [
+    {
+      label: '已发布',
+      value: statusSummary.value.published,
+      desc: '当前已加载并可公开展示的作品',
+    },
+    {
+      label: '草稿 / 隐藏',
+      value: `${statusSummary.value.draft} / ${statusSummary.value.hidden}`,
+      desc: '仍可继续补封面、标题和发布设置',
+    },
+    {
+      label: 'AI 增强',
+      value: aiPromptCount.value,
+      desc: '当前列表中来自智能扩写的作品',
+    },
+    {
+      label: 'AI 封面',
+      value: aiCoverCount.value,
+      desc: '当前列表累计 AI 封面生成次数',
+    },
+  ]
 })
 
 const resetPaging = () => {
@@ -181,7 +267,8 @@ const reloadMusic = () => {
 
 <style lang="scss" scoped>
 .creator-page {
-  height: calc(100vh - 125px);
+  height: calc(100dvh - 125px);
+  min-height: calc(100dvh - 125px);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -275,6 +362,39 @@ const reloadMusic = () => {
   flex-wrap: wrap;
 }
 
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.overview-card {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.overview-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.overview-value {
+  margin-top: 10px;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.overview-desc {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.68);
+}
+
 .filter-row {
   display: flex;
   flex-wrap: wrap;
@@ -302,11 +422,13 @@ const reloadMusic = () => {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
 }
 
 @media (max-width: 900px) {
   .creator-page {
-    height: calc(100vh - 145px);
+    height: calc(100dvh - 145px);
+    min-height: calc(100dvh - 145px);
   }
 
   .creator-hero {
@@ -319,11 +441,16 @@ const reloadMusic = () => {
     justify-content: flex-start;
     max-width: none;
   }
+
+  .overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 600px) {
   .creator-page {
-    height: calc(100vh - 176px);
+    height: calc(100dvh - 176px);
+    min-height: calc(100dvh - 176px);
     gap: 12px;
   }
 
@@ -338,6 +465,18 @@ const reloadMusic = () => {
 
   .toolbar-panel {
     align-items: flex-start;
+  }
+
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-card {
+    padding: 14px 16px;
+  }
+
+  .overview-value {
+    font-size: 22px;
   }
 }
 </style>

@@ -1,16 +1,39 @@
 <template>
-  <div class="create-tab">
-    <el-tabs v-model="formData.musicType">
-      <el-tab-pane label="歌曲" :name="0"></el-tab-pane>
-      <el-tab-pane label="纯音乐" :name="1"></el-tab-pane>
-    </el-tabs>
+  <div class="create-shell">
+    <div class="create-tab">
+      <el-tabs v-model="formData.musicType">
+        <el-tab-pane label="歌曲" :name="0"></el-tab-pane>
+        <el-tab-pane label="纯音乐" :name="1"></el-tab-pane>
+      </el-tabs>
+    </div>
+    <div class="create-intro">
+      <div class="intro-copy">
+        <div class="intro-kicker">AIGC 创作流程</div>
+        <div class="intro-title">{{ createHeading }}</div>
+        <div class="intro-desc">
+          先用一句话整理创作意图，再确认提示词、模型和生成模式。当前来源会随着作品一并记录到后续封面、发布和统计链路。
+        </div>
+      </div>
+      <div class="intro-grid">
+        <div class="intro-card" v-for="item in introCards" :key="item.label">
+          <div class="intro-card-label">{{ item.label }}</div>
+          <div class="intro-card-value">{{ item.value }}</div>
+          <div class="intro-card-desc">{{ item.desc }}</div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="create-form">
     <el-form :model="formData" :rules="rules" ref="formDataRef" label-width="80px" @submit.prevent>
-      <Switch :data="[
-          { label: '简单模式', value: 0 },
-          { label: '高级模式', value: 1 },
-        ]" v-model="formData.modeType"></Switch>
+      <div class="mode-strip">
+        <Switch :data="[
+            { label: '简单模式', value: 0 },
+            { label: '高级模式', value: 1 },
+          ]" v-model="formData.modeType"></Switch>
+        <div class="mode-strip-tip">
+          {{ modeTipText }}
+        </div>
+      </div>
       <div class="assist-panel">
         <div class="part-title">一句话描述需求</div>
         <el-input
@@ -57,6 +80,15 @@
               <div class="assist-card-title">推荐标签</div>
               <div class="assist-chip-list">
                 <span class="assist-chip" v-for="tag in promptAssistResult.tags" :key="tag">{{ tag }}</span>
+              </div>
+            </div>
+            <div class="assist-card assist-card-wide" v-if="assistHighlightItems.length > 0">
+              <div class="assist-card-title">结构化建议</div>
+              <div class="assist-highlight-grid">
+                <div class="assist-highlight" v-for="item in assistHighlightItems" :key="item.label">
+                  <span class="assist-highlight-label">{{ item.label }}</span>
+                  <span class="assist-highlight-value">{{ item.value }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -107,20 +139,24 @@
           </div>
         </div>
       </template>
-      <div class="part-title">选择模型</div>
-      <!-- 下拉框 -->
-      <div class="model-select">
-        <el-radio-group v-model="formData.model" class="model-select" size="large">
-          <el-radio-button v-for="model in music_models" :value="model.dictCode" :label="model.dictCode">
-          </el-radio-button>
-        </el-radio-group>
-        <div class="model-tips">{{ currentModel?.dictDesc }}</div>
+      <div class="model-panel">
+        <div class="part-title">选择模型</div>
+        <div class="model-select">
+          <el-radio-group v-model="formData.model" class="model-select" size="large">
+            <el-radio-button v-for="model in music_models" :value="model.dictCode" :label="model.dictCode">
+            </el-radio-button>
+          </el-radio-group>
+          <div class="model-tips">{{ currentModel?.dictDesc || '系统会按照当前音乐类型提供可用模型。' }}</div>
+        </div>
       </div>
       <div class="submit-btn" @click="createMusic">
         <el-icon class="is-loading" v-if="creating">
           <Loading style="width: 1em; height: 1em" />
         </el-icon>
         <span v-else>创作音乐</span>
+      </div>
+      <div class="submit-note">
+        当前将使用 {{ createPromptSourceText }}，模型为 {{ currentModel?.dictCode || formData.model || '待选择' }}。
       </div>
     </el-form>
   </div>
@@ -271,6 +307,88 @@ const rules = {
   title: [{ required: true, message: '请输入内容' }],
 }
 
+const createHeading = computed(() => {
+  return formData.value.musicType === 0
+    ? '把一句灵感扩展成完整歌曲'
+    : '把一句灵感扩展成纯音乐氛围'
+})
+
+const musicTypeText = computed(() => {
+  return formData.value.musicType === 0 ? '歌曲' : '纯音乐'
+})
+
+const modeTypeText = computed(() => {
+  return formData.value.modeType === 0 ? '简单模式' : '高级模式'
+})
+
+const createPromptSourceText = computed(() => {
+  return formData.value.promptSourceType === 1 ? 'AI 扩写回填' : '手动输入 / 灵感库'
+})
+
+const modeTipText = computed(() => {
+  return formData.value.modeType === 0
+    ? '简单模式适合快速开始，会优先围绕一句话需求和最终提示词完成创作。'
+    : '高级模式适合细化控制，可继续设置歌词、曲风、情绪、人声与模型。'
+})
+
+const assistStatusText = computed(() => {
+  if (!promptAssistResult.value) {
+    return '未扩写'
+  }
+  const titleCount = promptAssistResult.value.titleSuggestions?.length || 0
+  const tagCount = promptAssistResult.value.tags?.length || 0
+  return `标题 ${titleCount} · 标签 ${tagCount}`
+})
+
+const introCards = computed(() => {
+  return [
+    {
+      label: '创作类型',
+      value: musicTypeText.value,
+      desc: formData.value.musicType === 0 ? '适合歌词和人声作品' : '适合氛围、配乐与纯演奏',
+    },
+    {
+      label: '生成模式',
+      value: modeTypeText.value,
+      desc: formData.value.modeType === 0 ? '更快进入生成' : '可进一步细化控制',
+    },
+    {
+      label: '提示词来源',
+      value: createPromptSourceText.value,
+      desc: '当前结果会带入作品创作记录',
+    },
+    {
+      label: '结构化结果',
+      value: assistStatusText.value,
+      desc: promptAssistResult.value ? assistSourceText.value : '先扩写再确认细节',
+    },
+  ]
+})
+
+const assistHighlightItems = computed(() => {
+  if (!promptAssistResult.value) {
+    return []
+  }
+  return [
+    {
+      label: '曲风',
+      value: promptAssistResult.value.musicGenre || '未指定',
+    },
+    {
+      label: '情绪',
+      value: promptAssistResult.value.musicEmotion || '未指定',
+    },
+    {
+      label: '人声',
+      value: promptAssistResult.value.musicSex || (formData.value.musicType === 1 ? '纯音乐' : '未指定'),
+    },
+    {
+      label: '视觉风格',
+      value: promptAssistResult.value.visualStyle || '未指定',
+    },
+  ]
+})
+
 const applyAssistResult = (result) => {
   promptAssistResult.value = result
   formData.value.prompt = result.musicPrompt
@@ -379,6 +497,10 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.create-shell {
+  color: #fff;
+}
+
 .create-tab {
   :deep(.el-tabs__header) {
     margin-bottom: 0px;
@@ -400,8 +522,84 @@ onMounted(() => {
     }
   }
 }
+
+.create-intro {
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 123, 84, 0.28), transparent 32%),
+    linear-gradient(135deg, rgba(18, 20, 42, 0.96), rgba(25, 30, 54, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  .intro-copy {
+    min-width: 0;
+  }
+  .intro-kicker {
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .intro-title {
+    margin-top: 10px;
+    font-size: 28px;
+    line-height: 1.35;
+    font-weight: 700;
+  }
+  .intro-desc {
+    margin-top: 12px;
+    line-height: 1.75;
+    color: rgba(255, 255, 255, 0.72);
+    max-width: 560px;
+  }
+  .intro-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .intro-card {
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .intro-card-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.58);
+  }
+  .intro-card-value {
+    margin-top: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .intro-card-desc {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.68);
+  }
+}
+
 .create-form {
   color: #fff;
+  margin-top: 16px;
+  .mode-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .mode-strip-tip {
+    max-width: 320px;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 13px;
+    line-height: 1.6;
+  }
   .assist-panel {
     margin: 16px 0 20px;
     padding: 14px;
@@ -500,6 +698,28 @@ onMounted(() => {
       color: var(--hiText);
       font-size: 12px;
     }
+    .assist-highlight-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .assist-highlight {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .assist-highlight-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.56);
+    }
+    .assist-highlight-value {
+      color: var(--hiText);
+      line-height: 1.5;
+      word-break: break-word;
+    }
   }
   .input-panel {
     background: #29244e;
@@ -539,30 +759,33 @@ onMounted(() => {
   }
 
   .advanced-panel {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    gap: 14px;
     .lyric-panel {
-      width: 300px;
       background: #29244d;
-      border-radius: 5px;
+      border-radius: 12px;
       overflow: hidden;
-      height: 100%;
+      min-width: 0;
       .lyric-input {
         border-radius: 0px;
         border-top: 1px solid var(--text);
         :deep(.el-textarea__inner) {
-          height: calc(100vh - 515px);
+          min-height: 240px;
           color: var(--hiText);
         }
       }
     }
     .setting-panel {
-      padding: 0px 10px 0px 10px;
-      flex: 1;
-      width: 0;
+      padding: 4px 16px 14px;
+      min-width: 0;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
   }
   .advanced-panel-line {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     .lyric-panel {
       width: 100%;
     }
@@ -572,6 +795,15 @@ onMounted(() => {
   }
   .part-title {
     line-height: 40px;
+    font-weight: 600;
+  }
+
+  .model-panel {
+    margin-top: 8px;
+    padding: 0 16px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .model-select {
@@ -602,15 +834,47 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     background: var(--btnBg);
-    box-shadow: var(-btnShadow);
+    box-shadow: var(--btnShadow);
     &:hover {
       opacity: 0.9;
+    }
+  }
+  .submit-note {
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 0.64);
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 960px) {
+  .create-intro {
+    grid-template-columns: 1fr;
+  }
+
+  .create-form {
+    .advanced-panel {
+      grid-template-columns: 1fr;
     }
   }
 }
 
 @media (max-width: 500px) {
+  .create-intro {
+    padding: 16px;
+    border-radius: 18px;
+    .intro-title {
+      font-size: 24px;
+    }
+    .intro-grid {
+      grid-template-columns: 1fr;
+    }
+  }
   .create-form {
+    .mode-strip-tip {
+      max-width: none;
+    }
     .assist-panel {
       .assist-result-grid {
         grid-template-columns: 1fr;
@@ -618,9 +882,11 @@ onMounted(() => {
       .assist-card-wide {
         grid-column: span 1;
       }
+      .assist-highlight-grid {
+        grid-template-columns: 1fr;
+      }
     }
     .advanced-panel {
-      flex-direction: column;
       .lyric-panel {
         width: 100%;
       }

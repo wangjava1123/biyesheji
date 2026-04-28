@@ -1,5 +1,5 @@
 <template>
-  <div class="load-more-data-list" @scroll="handleScroll">
+  <div class="load-more-data-list" ref="listRef" @scroll="handleScroll">
     <div
       :class="[layoutType == 'grid' ? 'data-list-grad' : '']"
       :style="{
@@ -36,18 +36,8 @@
 </template>
 
 <script setup>
-import {
-  ref,
-  reactive,
-  getCurrentInstance,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  watch,
-} from "vue";
-import { useRouter } from "vue-router";
+import { ref, getCurrentInstance, nextTick, onMounted, watch } from "vue";
 const { proxy } = getCurrentInstance();
-const router = useRouter();
 
 const props = defineProps({
   dataSource: {
@@ -71,6 +61,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["loadData"]);
+const listRef = ref();
+
 const handleScroll = (e) => {
   if (props.loading) {
     return;
@@ -85,10 +77,34 @@ defineExpose({
   handleScroll,
 });
 
+const tryAutoLoad = async () => {
+  await nextTick();
+  if (props.loading || !listRef.value) {
+    return;
+  }
+  const { scrollHeight, clientHeight } = listRef.value;
+  const pageNo = props.dataSource?.pageNo || 0;
+  const pageTotal = props.dataSource?.pageTotal || 0;
+  if (pageNo > 0 && pageNo < pageTotal && scrollHeight <= clientHeight + 1) {
+    emit("loadData");
+  }
+};
+
 onMounted(async () => {
-  window.addEventListener("scroll", handleScroll);
   emit("loadData");
 });
+
+watch(
+  () => [
+    props.loading,
+    props.dataSource?.pageNo,
+    props.dataSource?.pageTotal,
+    props.dataSource?.list?.length,
+  ],
+  () => {
+    tryAutoLoad();
+  }
+);
 </script>
 
 <style lang="scss" scoped>

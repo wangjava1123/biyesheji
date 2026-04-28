@@ -47,7 +47,7 @@ const changeModel = (item) => {
   background: #271b39;
   border-radius: 25px;
   margin: 10px 0px;
-  width: 250px;
+  width: min(100%, 250px);
   line-height: 35px;
   cursor: pointer;
   &:hover {
