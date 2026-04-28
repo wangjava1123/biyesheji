@@ -75,15 +75,16 @@ const playList = () => {
 
 <style lang="scss" scoped>
 .music-item {
-  width: 220px;
-  padding-right: 20px;
+  width: clamp(220px, 22vw, 260px);
+  padding-right: 16px;
   position: relative;
   cursor: pointer;
   .cover {
     width: 100%;
     overflow: hidden;
     position: relative;
-    border-radius: 10px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(49, 39, 74, 0.9), rgba(24, 19, 38, 0.96));
     &:hover {
       .opbtn {
         display: flex;
@@ -136,11 +137,12 @@ const playList = () => {
     }
   }
   .music-info {
+    margin-top: 12px;
+    padding: 0 4px;
     color: #ffff;
     .music-title {
       color: #fff;
-      font-size: 16px;
-      margin-top: 5px;
+      font-size: 17px;
       font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -152,28 +154,57 @@ const playList = () => {
     .music-prompt {
       font-size: 12px;
       font-weight: 500;
-      opacity: 0.5;
-      margin-top: 5px;
+      opacity: 0.65;
+      margin-top: 6px;
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
     .user-info {
       display: flex;
       align-items: center;
+      gap: 8px;
       margin-top: 10px;
       .user-avatar {
-        margin-right: 5px;
+        flex-shrink: 0;
       }
       .user-name {
-        opacity: 0.5;
+        opacity: 0.7;
         font-size: 14px;
-        margin-right: 10px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         text-decoration: none;
         color: #fff;
+      }
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .music-item {
+    width: min(78vw, 300px);
+    padding-right: 12px;
+    .cover {
+      border-radius: 16px;
+      .opbtn {
+        display: flex;
+        width: 36px;
+        height: 36px;
+        background: rgba(10, 10, 18, 0.48);
+      }
+      .play-info {
+        bottom: 54px;
+      }
+    }
+    .music-info {
+      margin-top: 10px;
+      .music-title {
+        font-size: 16px;
+      }
+      .music-prompt {
+        -webkit-line-clamp: 3;
       }
     }
   }

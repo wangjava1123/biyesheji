@@ -156,7 +156,7 @@ const showIntegralRecord = () => {
     position: absolute;
     z-index: 1;
     width: 200px;
-    height: calc(100vh);
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     .logo {
@@ -254,13 +254,15 @@ const showIntegralRecord = () => {
   }
 
   @media (max-width: 500px) {
+    background: linear-gradient(180deg, rgba(10, 7, 22, 0.98), rgba(16, 14, 34, 0.96));
     .bg,
     .logo {
       display: none;
     }
 
     .left-side {
-      height: calc(100vh - 50px);
+      height: calc(100dvh - 50px);
+      min-height: calc(100dvh - 50px);
     }
   }
 }

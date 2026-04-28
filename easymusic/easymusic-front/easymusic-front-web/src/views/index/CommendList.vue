@@ -1,13 +1,13 @@
 <template>
-  <div class="commend-list" ref="commendListRef">
+  <div class="commend-list">
     <div class="swiper-panel" ref="swipePanelRef">
       <div
-        ref="swiperWraperRef"
         class="swiper-wraper"
         :style="{ transform: `translate3d(${xOffset}px, 0px, 0px)` }"
       >
         <MusicCommendItem
           v-for="item in commendList"
+          :key="item.musicId"
           :data="item"
           class="hot-item"
           @playList="playList"
@@ -19,32 +19,25 @@
 
 <script setup>
 import MusicCommendItem from "@/component/biz/MusicCommendItem.vue";
-import {
-  ref,
-  reactive,
-  getCurrentInstance,
-  nextTick,
-  computed,
-  onMounted,
-  onUnmounted,
-  watch,
-} from "vue";
-import { useRouter, useRoute } from "vue-router";
-const { proxy } = getCurrentInstance();
-const router = useRouter();
-const route = useRoute();
+import { ref, getCurrentInstance, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useMusicPlayStore } from "@/stores/musicPlay.js";
+
+const { proxy } = getCurrentInstance();
 const musicPlayStore = useMusicPlayStore();
 
 const commendList = ref([]);
+const xOffset = ref(0);
+const parentWidth = ref(0);
+const swipePanelRef = ref();
+
 const loadCommend = async () => {
-  let result = await proxy.Request({
+  const result = await proxy.Request({
     url: proxy.Api.loadCommendMusic,
   });
   if (!result) {
     return;
   }
-  commendList.value = result.data;
+  commendList.value = result.data || [];
 };
 
 const playList = () => {
@@ -52,41 +45,64 @@ const playList = () => {
 };
 
 const emit = defineEmits(["disableType"]);
-const xOffset = ref(0);
-const change = (type) => {
+
+const getSwiperState = () => {
   const itemNodes = document.getElementsByClassName("hot-item");
+  if (!itemNodes.length) {
+    return {
+      itemWidth: 0,
+      wrapWidth: 0,
+    };
+  }
   const itemWidth = itemNodes[0].clientWidth;
-  const swiperWraperWidth = itemNodes.length * itemWidth;
-  if (xOffset.value == 0 && type == 1) {
+  return {
+    itemWidth,
+    wrapWidth: itemNodes.length * itemWidth,
+  };
+};
+
+const updateDisableType = () => {
+  const { wrapWidth } = getSwiperState();
+  if (!wrapWidth || wrapWidth <= parentWidth.value || xOffset.value >= 0) {
+    emit("disableType", 1);
     return;
   }
-  if (type == -1 && -xOffset.value + parentWidth.value >= swiperWraperWidth) {
-    console.log(xOffset.value, parentWidth.value, swiperWraperWidth);
+  if (-xOffset.value + parentWidth.value >= wrapWidth) {
+    emit("disableType", -1);
+    return;
+  }
+  emit("disableType", null);
+};
+
+const change = (type) => {
+  const { itemWidth, wrapWidth } = getSwiperState();
+  if (!itemWidth || !wrapWidth) {
+    return;
+  }
+  if (xOffset.value === 0 && type === 1) {
+    return;
+  }
+  if (type === -1 && -xOffset.value + parentWidth.value >= wrapWidth) {
     return;
   }
   xOffset.value = xOffset.value + type * itemWidth;
-
-  console.log(xOffset.value);
-
-  //已经到最左边
-  let disableType = null;
-  if (xOffset.value >= 0) {
-    disableType = 1;
-  } else if (-xOffset.value + parentWidth.value >= swiperWraperWidth) {
-    disableType = -1;
-  }
-  emit("disableType", disableType);
+  updateDisableType();
 };
 
-const commendListRef = ref();
-//父元素宽度
-const parentWidth = ref();
-
-const swipePanelRef = ref();
-//滚动元素宽度
 const init = async () => {
   await nextTick();
+  if (!swipePanelRef.value) {
+    return;
+  }
   parentWidth.value = swipePanelRef.value.clientWidth;
+  const { itemWidth, wrapWidth } = getSwiperState();
+  if (itemWidth && wrapWidth) {
+    const maxOffset = Math.min(0, parentWidth.value - wrapWidth);
+    if (xOffset.value < maxOffset) {
+      xOffset.value = maxOffset;
+    }
+  }
+  updateDisableType();
 };
 
 onMounted(() => {
@@ -94,9 +110,17 @@ onMounted(() => {
   init();
   window.addEventListener("resize", init);
 });
+
 onUnmounted(() => {
   window.removeEventListener("resize", init);
 });
+
+watch(commendList, async () => {
+  await nextTick();
+  xOffset.value = 0;
+  init();
+});
+
 defineExpose({
   change,
 });
@@ -104,13 +128,15 @@ defineExpose({
 
 <style lang="scss" scoped>
 .commend-list {
-  margin: 10px 0px;
-  .swiper-panel {
-    overflow: hidden;
-    .swiper-wraper {
-      display: flex;
-      transition: transform 0.6s;
-    }
-  }
+  margin: 6px 0 0;
+}
+
+.swiper-panel {
+  overflow: hidden;
+}
+
+.swiper-wraper {
+  display: flex;
+  transition: transform 0.6s ease;
 }
 </style>

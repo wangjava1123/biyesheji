@@ -70,15 +70,20 @@ const playList = () => {
 <style lang="scss" scoped>
 .music-item {
   display: flex;
-  padding: 0px 20px 0px 0px;
-  min-width: 320px;
-  height: 100px;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
   .cover {
-    background: #302748;
-    border-radius: 10px;
-    width: 100px;
-    height: 100px;
-    border-radius: 10px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, rgba(48, 39, 72, 0.9), rgba(27, 21, 42, 0.96));
+    border-radius: 16px;
+    width: 96px;
+    height: 96px;
     padding: 10px;
     cursor: pointer;
     position: relative;
@@ -88,9 +93,9 @@ const playList = () => {
     }
   }
   .music-info {
-    margin: 0px 15px;
     flex: 1;
     width: 0;
+    min-width: 0;
     color: #ffff;
     display: flex;
     flex-direction: column;
@@ -98,7 +103,7 @@ const playList = () => {
     .music-title {
       display: inline-block;
       color: #fff;
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -111,32 +116,33 @@ const playList = () => {
     .music-prompt {
       font-size: 12px;
       font-weight: 500;
-      opacity: 0.5;
-      margin-top: 5px;
+      opacity: 0.65;
+      margin-top: 6px;
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
     .user-info {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-top: 10px;
       .user-avatar {
-        margin-right: 5px;
         opacity: 1;
       }
       .user-name {
         font-size: 14px;
-        margin-right: 10px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        opacity: 0.5;
+        opacity: 0.7;
         text-decoration: none;
         color: #fff;
       }
       .iconfont {
-        opacity: 0.5;
+        opacity: 0.6;
         &::before {
           margin-right: 4px;
         }
@@ -152,10 +158,11 @@ const playList = () => {
   }
   .op-panel {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 16px;
     color: #fff;
     align-items: center;
-    width: 80px;
+    width: 36px;
     .opbtn {
       cursor: pointer;
     }
@@ -163,9 +170,25 @@ const playList = () => {
 }
 @media (max-width: 500px) {
   .music-item {
-    padding: 3px;
-    .user-name {
-      display: none;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+    .cover {
+      width: 84px;
+      height: 84px;
+      border-radius: 14px;
+    }
+    .music-info {
+      .music-title {
+        font-size: 16px;
+      }
+      .music-prompt {
+        -webkit-line-clamp: 3;
+      }
+    }
+    .op-panel {
+      width: 32px;
+      gap: 12px;
     }
   }
 }

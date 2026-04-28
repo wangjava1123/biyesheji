@@ -56,26 +56,36 @@ watch(
 
 <style lang="scss" scoped>
 .layout {
-  height: calc(100vh);
+  height: 100dvh;
+  min-height: 100dvh;
   .left-body {
     position: fixed;
-    height: calc(100vh);
+    inset: 0 auto 0 0;
+    height: 100dvh;
   }
   .right {
+    min-height: 100dvh;
     padding-left: 200px;
     overflow: auto;
-    padding-bottom: 70px;
+    padding-bottom: 86px;
+    background:
+      radial-gradient(circle at top right, rgba(255, 123, 84, 0.08), transparent 24%),
+      linear-gradient(180deg, #070512 0%, #0b0718 100%);
   }
 }
 
 @media (max-width: 500px) {
   .layout {
-    padding-top: 50px;
+    height: 100dvh;
+    min-height: 100dvh;
+    padding-top: 62px;
     .left-body {
       display: none;
     }
     .right {
       padding-left: 0px;
+      min-height: calc(100dvh - 62px);
+      padding-bottom: 92px;
     }
   }
 }

@@ -31,23 +31,30 @@ const showDrawerHandler = () => {
 @media (max-width: 500px) {
   .top-panel {
     display: flex;
-    background: #262626;
-    border-radius: 5px;
+    background: rgba(11, 10, 24, 0.86);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(18px);
+    border-radius: 16px;
     position: fixed;
-    top: 10px;
-    left: 10px;
-    right: 10px;
+    top: 8px;
+    left: 8px;
+    right: 8px;
     display: flex;
     align-items: center;
-    padding: 12px;
-    z-index: 10;
+    justify-content: flex-start;
+    padding: 12px 14px;
+    z-index: 20;
     .icon-list {
       color: #fff;
-      font-size: 25px;
+      font-size: 22px;
     }
     .title {
       color: #fff;
-      margin-left: 15px;
+      margin-left: 12px;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
   }
 }
